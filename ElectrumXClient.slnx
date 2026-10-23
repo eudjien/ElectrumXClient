@@ -1,0 +1,12 @@
+<Solution>
+    <Folder Name="/src/">
+        <Project Path="src/ElectrumXClient.Abstractions/ElectrumXClient.Abstractions.csproj"/>
+        <Project Path="src/ElectrumXClient/ElectrumXClient.csproj"/>
+    </Folder>
+    <Folder Name="/examples/">
+        <Project Path="examples/ElectrumXClient.EventMonitor/ElectrumXClient.EventMonitor.csproj"/>
+    </Folder>
+    <Folder Name="/tests/">
+        <Project Path="tests/ElectrumXClient.IntegrationTests/ElectrumXClient.IntegrationTests.csproj"/>
+    </Folder>
+</Solution>

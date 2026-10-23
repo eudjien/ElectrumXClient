@@ -1,0 +1,27 @@
+using NorthGomel.ElectrumXClient.Abstractions;
+using NorthGomel.ElectrumXClient.Abstractions.Models.Queries.Blockchain;
+using NorthGomel.ElectrumXClient.Abstractions.Models.Results.Blockchain;
+using System.Text.Json;
+
+namespace NorthGomel.ElectrumXClient.Converters.Queries.Blockchain;
+
+public sealed class TscMerkleWithTransactionHashQueryJsonConverter : ElectrumXQueryJsonConverter<ElectrumXTscMerkleWithTransactionHashQuery>
+{
+    public override bool HandleNull => true;
+
+    public override void Write(Utf8JsonWriter writer, ElectrumXTscMerkleWithTransactionHashQuery value, JsonSerializerOptions options)
+    {
+        if (value is null)
+        {
+            throw new JsonException("An ElectrumX query cannot be null.");
+        }
+
+        writer.WriteStartArray();
+        writer.WriteStringValue(value.TransactionHash);
+        writer.WriteNumberValue(value.Height);
+        writer.WriteStringValue(ElectrumXJsonPropertyValues.TscMerkle.TransactionOrId.TransactionId);
+        writer.WriteStringValue(value.TargetType.ToWireValue());
+
+        writer.WriteEndArray();
+    }
+}

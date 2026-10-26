@@ -12,6 +12,9 @@ public sealed class ElectrumXMasterNodeSubscription : ElectrumXResult
     /// <summary>Current server-reported masternode status, or <see langword="null" /> when the server returned no status.</summary>
     public string? Value { get; }
 
+    /// <summary>Converts the response to the current masternode status.</summary>
+    /// <param name="response">The masternode subscription response.</param>
+    /// <returns>The current status, or <see langword="null" /> when unavailable.</returns>
     public static implicit operator string?(ElectrumXMasterNodeSubscription response)
     {
         return response.Value;

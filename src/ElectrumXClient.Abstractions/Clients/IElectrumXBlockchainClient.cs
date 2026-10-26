@@ -1,4 +1,4 @@
-using NorthGomel.ElectrumXClient.Abstractions.Models.Results;
+using NorthGomel.ElectrumXClient.Abstractions.Models.Queries.Blockchain;
 using NorthGomel.ElectrumXClient.Abstractions.Models.Results.Blockchain;
 using NorthGomel.ElectrumXClient.Abstractions.Models.Results.Mempool;
 using NorthGomel.ElectrumXClient.Abstractions.Models.Results.Server;
@@ -65,7 +65,7 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// <returns>The original JSON value describing the block header.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.block.get_header</c>, available before protocol version 1.4.</remarks>
-    Task<ElectrumXJsonValueResult> GetLegacyBlockHeaderAsync(long height, CancellationToken cancellationToken = default);
+    Task<ElectrumXLegacyBlockHeader> GetLegacyBlockHeaderAsync(long height, CancellationToken cancellationToken = default);
 
     /// <summary>Returns the Base58 address associated with a legacy UTXO query.</summary>
     /// <param name="transactionHash">Transaction hash in hexadecimal.</param>
@@ -141,7 +141,7 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     ///     JSON-RPC method: <c>blockchain.scripthash.get_balance</c>, available since protocol version 1.1; CashToken filtering requires protocol version
     ///     1.5.0.
     /// </remarks>
-    Task<ElectrumXBalance> GetBalanceAsync(string scriptHash, string? tokenFilter, CancellationToken cancellationToken = default);
+    Task<ElectrumXBalance> GetBalanceAsync(string scriptHash, ElectrumXTokenFilter? tokenFilter, CancellationToken cancellationToken = default);
 
     /// <summary>Returns confirmed transactions and relevant unconfirmed transactions for a script hash.</summary>
     /// <param name="scriptHash">32-byte script hash encoded as exactly 64 hexadecimal characters, in Electrum byte order (least-significant byte first).</param>
@@ -192,7 +192,7 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     ///     JSON-RPC method: <c>blockchain.scripthash.listunspent</c>, available since protocol version 1.1; CashToken filtering requires protocol version
     ///     1.5.0.
     /// </remarks>
-    Task<ElectrumXUnspentOutputs> ListUnspentAsync(string scriptHash, string? tokenFilter, CancellationToken cancellationToken = default);
+    Task<ElectrumXUnspentOutputs> ListUnspentAsync(string scriptHash, ElectrumXTokenFilter? tokenFilter, CancellationToken cancellationToken = default);
 
     /// <summary>Returns the raw block header at the specified height as hexadecimal.</summary>
     /// <param name="height">Zero-based main-chain block height; must be non-negative.</param>
@@ -256,15 +256,22 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// </remarks>
     Task<ElectrumXBroadcastTransaction> BroadcastTransactionAsync(string rawTransaction, CancellationToken cancellationToken = default);
 
-    /// <summary>Broadcasts a topologically sorted transaction package (BTC servers that advertise support).</summary>
+    /// <summary>Broadcasts a topologically sorted transaction package without a verbose daemon response.</summary>
     /// <param name="rawTransactions">Package transactions, with the child transaction last.</param>
-    /// <param name="verbose">Whether to request the daemon-specific verbose response.</param>
     /// <param name="cancellationToken">Token used to cancel the request.</param>
-    /// <returns>The raw JSON result; its shape depends on the requested verbosity and backing daemon.</returns>
+    /// <returns>The package submission result.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.transaction.broadcast_package</c>, available since protocol version 1.6.0.</remarks>
-    Task<ElectrumXJsonValueResult> BroadcastTransactionPackageAsync(
+    Task<ElectrumXTransactionPackageBroadcast> BroadcastTransactionPackageAsync(
         IReadOnlyList<string> rawTransactions,
-        bool verbose = ElectrumXJsonMethodArgumentDefaultValues.ElectrumXBroadcastPackageQuery.Verbose,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Broadcasts a topologically sorted transaction package and requests the daemon-specific verbose response.</summary>
+    /// <param name="rawTransactions">Package transactions, with the child transaction last.</param>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
+    /// <returns>The verbose daemon response.</returns>
+    /// <remarks>JSON-RPC method: <c>blockchain.transaction.broadcast_package</c>, available since protocol version 1.6.0.</remarks>
+    Task<ElectrumXVerboseTransactionPackageBroadcast> BroadcastTransactionPackageVerboseAsync(
+        IReadOnlyList<string> rawTransactions,
         CancellationToken cancellationToken = default);
 
     /// <summary>Returns the Merkle branch proving a confirmed transaction's inclusion in a block.</summary>
@@ -341,9 +348,9 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// <returns>Confirmed and unconfirmed balances in the coin's smallest units.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.address.get_balance</c>, available since protocol version 1.4.3.</remarks>
-    Task<ElectrumXBalance> GetAddressBalanceAsync(
+    Task<ElectrumXAddressBalance> GetAddressBalanceAsync(
         string address,
-        string? tokenFilter = ElectrumXJsonMethodArgumentDefaultValues.ElectrumXAddressBalanceQuery.TokenFilter,
+        ElectrumXTokenFilter? tokenFilter = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>Returns an address's confirmed and unconfirmed transaction history.</summary>
@@ -353,7 +360,7 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// <returns>History entries returned by the server.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.address.get_history</c>, available since protocol version 1.4.3.</remarks>
-    Task<ElectrumXHistory> GetAddressHistoryAsync(
+    Task<ElectrumXAddressHistory> GetAddressHistoryAsync(
         string address,
         long fromHeight = ElectrumXJsonMethodArgumentDefaultValues.ElectrumXAddressHistoryQuery.FromHeight,
         long toHeight = ElectrumXJsonMethodArgumentDefaultValues.ElectrumXAddressHistoryQuery.ToHeight,
@@ -364,7 +371,7 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// <returns>Mempool entries returned by the server.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.address.get_mempool</c>, available since protocol version 1.4.3.</remarks>
-    Task<ElectrumXMempool> GetAddressMempoolAsync(string address, CancellationToken cancellationToken = default);
+    Task<ElectrumXAddressMempool> GetAddressMempoolAsync(string address, CancellationToken cancellationToken = default);
 
     /// <summary>Returns an address's unspent outputs, optionally filtered by CashToken membership.</summary>
     /// <param name="address">Cash Address or supported legacy address.</param>
@@ -372,9 +379,9 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// <returns>Unspent outputs returned by the server.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.address.listunspent</c>, available since protocol version 1.4.3.</remarks>
-    Task<ElectrumXUnspentOutputs> ListAddressUnspentAsync(
+    Task<ElectrumXAddressUnspentOutputs> ListAddressUnspentAsync(
         string address,
-        string? tokenFilter = ElectrumXJsonMethodArgumentDefaultValues.ElectrumXAddressListUnspentQuery.TokenFilter,
+        ElectrumXTokenFilter? tokenFilter = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>Returns the script hash for an address.</summary>
@@ -389,7 +396,7 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// <returns>The first-use result, or <see langword="null" /> when unused.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.address.get_first_use</c>, available since protocol version 1.5.2.</remarks>
-    Task<ElectrumXFirstUse?> GetAddressFirstUseAsync(string address, CancellationToken cancellationToken = default);
+    Task<ElectrumXAddressFirstUse?> GetAddressFirstUseAsync(string address, CancellationToken cancellationToken = default);
 
     /// <summary>Returns the current address status without subscribing.</summary>
     /// <param name="address">Cash Address or supported legacy address.</param>
@@ -466,7 +473,7 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// <returns>The current proof, or <see langword="null" /> when none exists.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.transaction.dsproof.subscribe</c>, available since protocol version 1.4.5.</remarks>
-    Task<ElectrumXDoubleSpendProof?> SubscribeToDoubleSpendProofAsync(
+    Task<ElectrumXSubscribedDoubleSpendProof?> SubscribeToDoubleSpendProofAsync(
         string transactionHash,
         CancellationToken cancellationToken = default);
 
@@ -509,7 +516,7 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// <returns>The tip height and raw header.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.headers.get_tip</c>, available since protocol version 1.5.0.</remarks>
-    Task<ElectrumXHeaderInfo> GetHeaderTipAsync(CancellationToken cancellationToken = default);
+    Task<ElectrumXHeaderTip> GetHeaderTipAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Unsubscribes from block-header updates.</summary>
     /// <param name="cancellationToken">Token used to cancel the request.</param>
@@ -529,7 +536,7 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// <returns>The first-use result, or <see langword="null" /> when unused.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.scripthash.get_first_use</c>, available since protocol version 1.5.2.</remarks>
-    Task<ElectrumXFirstUse?> GetScriptHashFirstUseAsync(string scriptHash, CancellationToken cancellationToken = default);
+    Task<ElectrumXScriptHashFirstUse?> GetScriptHashFirstUseAsync(string scriptHash, CancellationToken cancellationToken = default);
 
     /// <summary>Returns the confirmed history for an RPA prefix.</summary>
     /// <param name="rpaPrefix">Hexadecimal RPA prefix supported by the server's RPA index.</param>
@@ -538,7 +545,7 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// <returns>Matching confirmed transactions.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.rpa.get_history</c>, available since protocol version 1.5.3.</remarks>
-    Task<ElectrumXHistoryList> GetRpaHistoryAsync(
+    Task<ElectrumXRpaHistory> GetRpaHistoryAsync(
         string rpaPrefix,
         long fromHeight,
         long toHeight = ElectrumXJsonMethodArgumentDefaultValues.ElectrumXRpaHistoryQuery.ToHeight,
@@ -549,7 +556,7 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// <returns>Matching mempool transactions.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.rpa.get_mempool</c>, available since protocol version 1.5.3.</remarks>
-    Task<ElectrumXMempoolEntryList> GetRpaMempoolAsync(string rpaPrefix, CancellationToken cancellationToken = default);
+    Task<ElectrumXRpaMempool> GetRpaMempoolAsync(string rpaPrefix, CancellationToken cancellationToken = default);
 
     /// <summary>Returns confirmed RPA transactions using the legacy reusable-address API.</summary>
     /// <param name="fromHeight">Inclusive first height to scan.</param>
@@ -558,7 +565,7 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// <returns>Matching confirmed transactions.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.reusable.get_history</c>, available since protocol version 1.5.3.</remarks>
-    Task<ElectrumXHistoryList> GetReusableHistoryAsync(
+    Task<ElectrumXReusableHistory> GetReusableHistoryAsync(
         long fromHeight,
         int count,
         string rpaPrefix,
@@ -569,6 +576,6 @@ public interface IElectrumXBlockchainClient : IAsyncDisposable
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// <returns>Matching mempool transactions.</returns>
     /// <remarks>JSON-RPC method: <c>blockchain.reusable.get_mempool</c>, available since protocol version 1.5.3.</remarks>
-    Task<ElectrumXMempoolEntryList> GetReusableMempoolAsync(string rpaPrefix,
+    Task<ElectrumXReusableMempool> GetReusableMempoolAsync(string rpaPrefix,
         CancellationToken cancellationToken = default);
 }

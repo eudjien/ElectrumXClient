@@ -15,6 +15,9 @@ public sealed class ElectrumXScriptHashSubscription : ElectrumXResult
     /// </summary>
     public string? Value { get; }
 
+    /// <summary>Converts the response to its script-hash status.</summary>
+    /// <param name="response">The subscription response.</param>
+    /// <returns>The current status, or <see langword="null" /> when unused.</returns>
     public static implicit operator string?(ElectrumXScriptHashSubscription response)
     {
         return response.Value;

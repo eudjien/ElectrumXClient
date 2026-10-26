@@ -80,7 +80,7 @@ public interface IElectrumXServerClient : IAsyncDisposable
     ///     JSON-RPC method: <c>daemon.passthrough</c>, available since protocol version 1.5.2. This is a privileged capability: most servers disable it
     ///     because it exposes unrestricted daemon RPC to clients.
     /// </remarks>
-    Task<ElectrumXJsonValueResult> PassthroughAsync(
+    Task<ElectrumXDaemonPassthroughResult> PassthroughAsync(
         string method,
         IReadOnlyList<ElectrumXJsonValue>? parameters = null,
         CancellationToken cancellationToken = default);

@@ -41,30 +41,10 @@ public sealed class ElectrumXMempoolInfo(
         {
             foreach ((string name, var value) in additionalProperties)
             {
-                if (IsKnownProperty(name))
-                {
-                    throw new ArgumentException(
-                        $"'{name}' is a standard mempool info property and cannot be an additional property.",
-                        nameof(additionalProperties));
-                }
-
-                copy.Add(
-                    name ?? throw new ArgumentException("Additional mempool info property names cannot be null.", nameof(additionalProperties)),
-                    value ?? throw new ArgumentException(
-                        "Additional mempool info property values cannot be null; use ElectrumXJsonValue.NullValue.Instance.",
-                        nameof(additionalProperties)));
+                copy[name] = value;
             }
         }
 
         return new ReadOnlyDictionary<string, ElectrumXJsonValue>(copy);
-    }
-
-    private static bool IsKnownProperty(string name)
-    {
-        return name is ElectrumXJsonPropertyNames.MempoolInfoResult.MempoolMinimumFee or
-            ElectrumXJsonPropertyNames.MempoolInfoResult.MinimumRelayFee or
-            ElectrumXJsonPropertyNames.MempoolInfoResult.IncrementalRelayFee or
-            ElectrumXJsonPropertyNames.MempoolInfoResult.UnbroadcastCount or
-            ElectrumXJsonPropertyNames.MempoolInfoResult.FullReplaceByFee;
     }
 }

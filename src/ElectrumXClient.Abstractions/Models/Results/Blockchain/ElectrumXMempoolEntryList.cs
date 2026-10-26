@@ -8,4 +8,12 @@ public sealed class ElectrumXMempoolEntryList(IReadOnlyList<ElectrumXMempoolEntr
 {
     /// <summary>The returned mempool entries.</summary>
     public IReadOnlyList<ElectrumXMempoolEntry> Value { get; } = value;
+
+    /// <summary>Converts the response to its mempool entries.</summary>
+    /// <param name="response">The mempool-entry list response.</param>
+    /// <returns>The contained mempool entries.</returns>
+    public static implicit operator ElectrumXMempoolEntry[](ElectrumXMempoolEntryList response)
+    {
+        return [.. response.Value];
+    }
 }

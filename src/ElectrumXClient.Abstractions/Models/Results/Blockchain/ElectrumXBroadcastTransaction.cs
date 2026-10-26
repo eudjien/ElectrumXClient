@@ -12,6 +12,9 @@ public sealed class ElectrumXBroadcastTransaction : ElectrumXResult
     /// <summary>32-byte transaction hash returned by <c>blockchain.transaction.broadcast</c>, encoded as 64 hexadecimal characters.</summary>
     public string Value { get; }
 
+    /// <summary>Converts the response to the broadcast transaction identifier.</summary>
+    /// <param name="response">The transaction broadcast response.</param>
+    /// <returns>The transaction identifier.</returns>
     public static implicit operator string(ElectrumXBroadcastTransaction response)
     {
         return response.Value;

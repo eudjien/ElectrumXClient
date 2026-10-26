@@ -34,10 +34,14 @@ public sealed class HeaderInfoResultJsonConverter : JsonConverter<ElectrumXHeade
             switch (propertyName)
             {
                 case ElectrumXJsonPropertyNames.HeaderInfoResult.Height:
-                    height = FirstUseResultJsonConverter.ReadInt64(ref reader, "The header height must be an integer.");
+                    height = reader.TokenType == JsonTokenType.Number && reader.TryGetInt64(out long parsedHeight)
+                        ? parsedHeight
+                        : throw new JsonException("The header height must be an integer.");
                     break;
                 case ElectrumXJsonPropertyNames.HeaderInfoResult.Hex:
-                    hex = FirstUseResultJsonConverter.ReadString(ref reader, "The header hex must be a string.");
+                    hex = reader.TokenType == JsonTokenType.String
+                        ? reader.GetString() ?? throw new JsonException("The header hex must be a string.")
+                        : throw new JsonException("The header hex must be a string.");
                     break;
                 default:
                     reader.Skip();

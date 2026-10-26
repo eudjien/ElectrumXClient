@@ -5,6 +5,7 @@ using System.Net;
 
 namespace NorthGomel.ElectrumXClient.JsonRpc;
 
+/// <summary>Configuration shared by ElectrumX JSON-RPC transports.</summary>
 public sealed class ElectrumXRpcClientOptions : IElectrumXRpcClientOptions
 {
     private readonly string _clientName = "ElectrumXClient";

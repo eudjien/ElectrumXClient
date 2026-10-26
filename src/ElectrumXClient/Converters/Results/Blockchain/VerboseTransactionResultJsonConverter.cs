@@ -427,107 +427,29 @@ public sealed class VerboseTransactionResultJsonConverter : JsonConverter<Electr
             writer.WriteEndArray();
         }
 
+        var jsonValueConverter = (JsonConverter<ElectrumXJsonValue>)options.GetConverter(typeof(ElectrumXJsonValue));
         foreach ((string name, var propertyValue) in value.AdditionalProperties)
         {
-            writer.WritePropertyName(name);
-            var containers = new Stack<(
-                IReadOnlyList<(string? PropertyName, ElectrumXJsonValue Value)> Children,
-                bool IsObject,
-                int Index)>();
-            var currentValue = propertyValue;
-            bool writeCurrentValue = true;
-
-            while (writeCurrentValue || containers.Count > 0)
+            if (name is ElectrumXJsonPropertyNames.VerboseTransactionResult.BlockHash or
+                ElectrumXJsonPropertyNames.VerboseTransactionResult.BlockTime or
+                ElectrumXJsonPropertyNames.VerboseTransactionResult.Confirmations or
+                ElectrumXJsonPropertyNames.VerboseTransactionResult.Hash or
+                ElectrumXJsonPropertyNames.VerboseTransactionResult.Hex or
+                ElectrumXJsonPropertyNames.VerboseTransactionResult.LockTime or
+                ElectrumXJsonPropertyNames.VerboseTransactionResult.Size or
+                ElectrumXJsonPropertyNames.VerboseTransactionResult.Time or
+                ElectrumXJsonPropertyNames.VerboseTransactionResult.TransactionId or
+                ElectrumXJsonPropertyNames.VerboseTransactionResult.Version or
+                ElectrumXJsonPropertyNames.VerboseTransactionResult.Inputs or
+                ElectrumXJsonPropertyNames.VerboseTransactionResult.Outputs)
             {
-                if (writeCurrentValue)
-                {
-                    switch (currentValue)
-                    {
-                        case ElectrumXJsonValue.StringValue stringValue:
-                            writer.WriteStringValue(stringValue.Value);
-                            break;
-                        case ElectrumXJsonValue.NumberValue numberValue:
-                            writer.WriteRawValue(numberValue.RawJson);
-                            break;
-                        case ElectrumXJsonValue.BooleanValue booleanValue:
-                            writer.WriteBooleanValue(booleanValue.Value);
-                            break;
-                        case ElectrumXJsonValue.NullValue:
-                            writer.WriteNullValue();
-                            break;
-                        case ElectrumXJsonValue.ArrayValue arrayValue:
-                            writer.WriteStartArray();
-                            containers.Push((GetContainerChildren(arrayValue), false, 0));
-                            break;
-                        case ElectrumXJsonValue.ObjectValue objectValue:
-                            writer.WriteStartObject();
-                            containers.Push((GetContainerChildren(objectValue), true, 0));
-                            break;
-                        default:
-                            throw new JsonException($"Unsupported ElectrumX JSON value type '{currentValue.GetType().Name}'.");
-                    }
-
-                    writeCurrentValue = false;
-                }
-
-                while (!writeCurrentValue && containers.Count > 0)
-                {
-                    (var children, bool isObject, int index) = containers.Pop();
-                    if (index < children.Count)
-                    {
-                        (string? propertyName, var childValue) = children[index];
-                        containers.Push((children, isObject, index + 1));
-                        if (isObject)
-                        {
-                            writer.WritePropertyName(propertyName
-                                                     ?? throw new InvalidOperationException("Object property name is missing."));
-                        }
-
-                        currentValue = childValue;
-                        writeCurrentValue = true;
-                    }
-                    else
-                    {
-                        if (isObject)
-                        {
-                            writer.WriteEndObject();
-                        }
-                        else
-                        {
-                            writer.WriteEndArray();
-                        }
-                    }
-                }
+                continue;
             }
+
+            writer.WritePropertyName(name);
+            jsonValueConverter.Write(writer, propertyValue, options);
         }
 
         writer.WriteEndObject();
-    }
-
-    private static IReadOnlyList<(string? PropertyName, ElectrumXJsonValue Value)> GetContainerChildren(
-        ElectrumXJsonValue container)
-    {
-        switch (container)
-        {
-            case ElectrumXJsonValue.ArrayValue arrayValue:
-                var items = new (string? PropertyName, ElectrumXJsonValue Value)[arrayValue.Items.Count];
-                for (int index = 0; index < arrayValue.Items.Count; index++)
-                {
-                    items[index] = (null, arrayValue.Items[index]);
-                }
-
-                return items;
-            case ElectrumXJsonValue.ObjectValue objectValue:
-                var properties = new (string? PropertyName, ElectrumXJsonValue Value)[objectValue.Properties.Count];
-                int propertyIndex = 0;
-                foreach ((string propertyName, var propertyValue) in objectValue.Properties)
-                {
-                    properties[propertyIndex++] = (propertyName, propertyValue);
-                }
-
-                return properties;
-            default:
-                throw new ArgumentException("The value must be a JSON array or object.", nameof(container));
-        }
     }
 }

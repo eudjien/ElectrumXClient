@@ -116,7 +116,7 @@ public sealed class ElectrumXServerClient : ElectrumXClientBase, IElectrumXServe
     }
 
     /// <inheritdoc />
-    public async Task<ElectrumXJsonValueResult> PassthroughAsync(
+    public async Task<ElectrumXDaemonPassthroughResult> PassthroughAsync(
         string method,
         IReadOnlyList<ElectrumXJsonValue>? parameters = null,
         CancellationToken cancellationToken = default)
@@ -124,7 +124,7 @@ public sealed class ElectrumXServerClient : ElectrumXClientBase, IElectrumXServe
         ThrowIfDisposed();
         EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version152, ElectrumXJsonMethodNames.Daemon.Passthrough);
 
-        return await CallOrThrowAsync<ElectrumXJsonValueResult, ElectrumXDaemonPassthroughQuery>(
+        return await CallOrThrowAsync<ElectrumXDaemonPassthroughResult, ElectrumXDaemonPassthroughQuery>(
             new JsonRpcRequest<ElectrumXDaemonPassthroughQuery>(
                 ElectrumXJsonMethodNames.Daemon.Passthrough,
                 new ElectrumXDaemonPassthroughQuery(method, parameters)),

@@ -16,6 +16,13 @@ public static class ElectrumXJsonPropertyValues
         public const string HashFunctionSha256 = "sha256";
     }
 
+    public static class TokenFilter
+    {
+        public const string IncludeTokens = "include_tokens";
+        public const string ExcludeTokens = "exclude_tokens";
+        public const string TokensOnly = "tokens_only";
+    }
+
     public static class TscMerkle
     {
         public static class TransactionOrId

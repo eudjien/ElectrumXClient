@@ -11,7 +11,7 @@ namespace NorthGomel.ElectrumXClient.Converters.Results.Blockchain;
 public sealed class VerboseTransactionInputResultJsonConverter : JsonConverter<ElectrumXVerboseTransactionInput>
 {
 
-    private static readonly ElectrumXJsonValueResultJsonConverter JsonValueConverter = new();
+    private static readonly ElectrumXJsonValueJsonConverter JsonValueConverter = new();
     public override bool HandleNull => true;
 
     public override ElectrumXVerboseTransactionInput Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

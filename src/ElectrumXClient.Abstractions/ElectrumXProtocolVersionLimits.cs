@@ -28,11 +28,16 @@ public sealed class ElectrumXProtocolVersionLimits
         Minimum = minimum;
         Maximum = maximum;
     }
+
+    /// <summary>Gets the default minimum protocol version.</summary>
     public static ElectrumXProtocolVersion MinimumDefault { get; } = new(1, 4);
 
+    /// <summary>Gets the default maximum protocol version.</summary>
     public static ElectrumXProtocolVersion MaximumDefault { get; } = new(1, 6);
 
+    /// <summary>Gets the minimum protocol version accepted during negotiation.</summary>
     public ElectrumXProtocolVersion Minimum { get; }
 
+    /// <summary>Gets the maximum protocol version accepted during negotiation.</summary>
     public ElectrumXProtocolVersion Maximum { get; }
 }

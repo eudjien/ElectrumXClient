@@ -20,7 +20,13 @@ public sealed class TscMerkleWithTransactionHashQueryJsonConverter : ElectrumXQu
         writer.WriteStringValue(value.TransactionHash);
         writer.WriteNumberValue(value.Height);
         writer.WriteStringValue(ElectrumXJsonPropertyValues.TscMerkle.TransactionOrId.TransactionId);
-        writer.WriteStringValue(value.TargetType.ToWireValue());
+        writer.WriteStringValue(value.TargetType switch
+        {
+            TscMerkleTargetType.BlockHash => ElectrumXJsonPropertyValues.TscMerkle.TargetType.BlockHash,
+            TscMerkleTargetType.BlockHeader => ElectrumXJsonPropertyValues.TscMerkle.TargetType.BlockHeader,
+            TscMerkleTargetType.MerkleRoot => ElectrumXJsonPropertyValues.TscMerkle.TargetType.MerkleRoot,
+            _ => throw new JsonException("The TSC Merkle target type is not supported.")
+        });
 
         writer.WriteEndArray();
     }

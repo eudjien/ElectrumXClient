@@ -1,7 +1,7 @@
 using NorthGomel.ElectrumXClient.Abstractions;
 using NorthGomel.ElectrumXClient.Abstractions.Clients;
 using NorthGomel.ElectrumXClient.Abstractions.JsonRpc;
-using NorthGomel.ElectrumXClient.Abstractions.Models.Queries.MasterNode;
+using NorthGomel.ElectrumXClient.Abstractions.Models.Queries.Masternode;
 using NorthGomel.ElectrumXClient.Abstractions.Models.Results.MasterNode;
 using NorthGomel.ElectrumXClient.Abstractions.Models.Results.Server;
 using NorthGomel.ElectrumXClient.JsonRpc;

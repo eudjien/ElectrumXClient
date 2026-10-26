@@ -1,6 +1,7 @@
 using NorthGomel.ElectrumXClient.Abstractions;
 using NorthGomel.ElectrumXClient.Abstractions.Models.Results.Blockchain;
 using System;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -59,7 +60,114 @@ public sealed class UnspentOutputResultJsonConverter : JsonConverter<ElectrumXUn
                         : throw new JsonException("The unspent output value must be an integer.");
                     break;
                 case ElectrumXJsonPropertyNames.UnspentOutputResult.TokenData:
-                    tokenData = ReadTokenData(ref reader);
+                    if (reader.TokenType != JsonTokenType.StartObject)
+                    {
+                        throw new JsonException("Token data must be an object.");
+                    }
+
+                    long? tokenAmount = null;
+                    string? category = null;
+                    ElectrumXTokenNft? nft = null;
+                    while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+                    {
+                        if (reader.TokenType != JsonTokenType.PropertyName || !reader.Read())
+                        {
+                            throw new JsonException("Token data is incomplete.");
+                        }
+
+                        switch (reader.GetString())
+                        {
+                            case ElectrumXJsonPropertyNames.TokenDataResult.Amount:
+                                if (reader.TokenType != JsonTokenType.String ||
+                                    !long.TryParse(
+                                        reader.GetString(),
+                                        NumberStyles.None,
+                                        CultureInfo.InvariantCulture,
+                                        out long parsedTokenAmount))
+                                {
+                                    throw new JsonException("The token amount must be a non-negative integer string within the Int64 range.");
+                                }
+
+                                tokenAmount = parsedTokenAmount;
+                                break;
+                            case ElectrumXJsonPropertyNames.TokenDataResult.Category:
+                                category = reader.TokenType == JsonTokenType.String
+                                    ? reader.GetString()
+                                    : throw new JsonException("The token category must be a string.");
+                                break;
+                            case ElectrumXJsonPropertyNames.TokenDataResult.Nft:
+                                if (reader.TokenType == JsonTokenType.Null)
+                                {
+                                    nft = null;
+                                    break;
+                                }
+
+                                if (reader.TokenType != JsonTokenType.StartObject)
+                                {
+                                    throw new JsonException("NFT token data must be an object or null.");
+                                }
+
+                                ElectrumXTokenNftCapability? capability = null;
+                                string? commitment = null;
+                                while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+                                {
+                                    if (reader.TokenType != JsonTokenType.PropertyName || !reader.Read())
+                                    {
+                                        throw new JsonException("NFT token data is incomplete.");
+                                    }
+
+                                    switch (reader.GetString())
+                                    {
+                                        case ElectrumXJsonPropertyNames.TokenDataResult.Capability:
+                                            capability = reader.TokenType == JsonTokenType.String
+                                                ? reader.GetString() switch
+                                                {
+                                                    ElectrumXJsonPropertyNames.TokenDataResult.CapabilityNone =>
+                                                        ElectrumXTokenNftCapability.None,
+                                                    ElectrumXJsonPropertyNames.TokenDataResult.CapabilityMutable =>
+                                                        ElectrumXTokenNftCapability.Mutable,
+                                                    ElectrumXJsonPropertyNames.TokenDataResult.CapabilityMinting =>
+                                                        ElectrumXTokenNftCapability.Minting,
+                                                    _ => throw new JsonException("The NFT capability is not recognized.")
+                                                }
+                                                : throw new JsonException("The NFT capability must be a string.");
+                                            break;
+                                        case ElectrumXJsonPropertyNames.TokenDataResult.Commitment:
+                                            commitment = reader.TokenType == JsonTokenType.String
+                                                ? reader.GetString()
+                                                  ?? throw new JsonException("The NFT commitment must be a string.")
+                                                : throw new JsonException("The NFT commitment must be a string.");
+                                            break;
+                                        default:
+                                            reader.Skip();
+                                            break;
+                                    }
+                                }
+
+                                if (reader.TokenType != JsonTokenType.EndObject)
+                                {
+                                    throw new JsonException("NFT token data is incomplete.");
+                                }
+
+                                nft = new ElectrumXTokenNft(
+                                    capability ?? throw new JsonException("The NFT capability is missing."),
+                                    commitment ?? throw new JsonException("The NFT commitment is missing."));
+                                break;
+                            default:
+                                reader.Skip();
+                                break;
+                        }
+                    }
+
+                    if (reader.TokenType != JsonTokenType.EndObject)
+                    {
+                        throw new JsonException("Token data is incomplete.");
+                    }
+
+                    tokenData = new ElectrumXTokenData(
+                        tokenAmount ?? throw new JsonException("The token amount is missing."),
+                        category ?? throw new JsonException("The token category is missing."),
+                        nft);
                     break;
                 default:
                     reader.Skip();
@@ -95,131 +203,27 @@ public sealed class UnspentOutputResultJsonConverter : JsonConverter<ElectrumXUn
         writer.WriteNumber(ElectrumXJsonPropertyNames.UnspentOutputResult.Value, value.Value);
         if (value.TokenData is not null)
         {
-            WriteTokenData(writer, value.TokenData);
-        }
-
-        writer.WriteEndObject();
-    }
-
-    internal static ElectrumXTokenData ReadTokenData(ref Utf8JsonReader reader)
-    {
-        if (reader.TokenType != JsonTokenType.StartObject)
-        {
-            throw new JsonException("Token data must be an object.");
-        }
-
-        string? amount = null;
-        string? category = null;
-        ElectrumXTokenNft? nft = null;
-        while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
-        {
-            if (reader.TokenType != JsonTokenType.PropertyName || !reader.Read())
-            {
-                throw new JsonException("Token data is incomplete.");
-            }
-
-            switch (reader.GetString())
-            {
-                case ElectrumXJsonPropertyNames.TokenDataResult.Amount:
-                    amount = reader.TokenType == JsonTokenType.String
-                        ? reader.GetString()
-                        : throw new JsonException("The token amount must be a string.");
-                    break;
-                case ElectrumXJsonPropertyNames.TokenDataResult.Category:
-                    category = reader.TokenType == JsonTokenType.String
-                        ? reader.GetString()
-                        : throw new JsonException("The token category must be a string.");
-                    break;
-                case ElectrumXJsonPropertyNames.TokenDataResult.Nft:
-                    nft = reader.TokenType == JsonTokenType.Null ? null : ReadTokenNft(ref reader);
-                    break;
-                default:
-                    reader.Skip();
-                    break;
-            }
-        }
-
-        if (reader.TokenType != JsonTokenType.EndObject)
-        {
-            throw new JsonException("Token data is incomplete.");
-        }
-
-        return new ElectrumXTokenData(
-            amount ?? throw new JsonException("The token amount is missing."),
-            category ?? throw new JsonException("The token category is missing."),
-            nft);
-    }
-
-    private static ElectrumXTokenNft ReadTokenNft(ref Utf8JsonReader reader)
-    {
-        if (reader.TokenType != JsonTokenType.StartObject)
-        {
-            throw new JsonException("NFT token data must be an object or null.");
-        }
-
-        ElectrumXTokenNftCapability? capability = null;
-        string? commitment = null;
-        while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
-        {
-            if (reader.TokenType != JsonTokenType.PropertyName || !reader.Read())
-            {
-                throw new JsonException("NFT token data is incomplete.");
-            }
-
-            switch (reader.GetString())
-            {
-                case ElectrumXJsonPropertyNames.TokenDataResult.Capability:
-                    capability = reader.TokenType == JsonTokenType.String
-                        ? reader.GetString() switch
-                        {
-                            ElectrumXJsonPropertyNames.TokenDataResult.CapabilityNone => ElectrumXTokenNftCapability.None,
-                            ElectrumXJsonPropertyNames.TokenDataResult.CapabilityMutable => ElectrumXTokenNftCapability.Mutable,
-                            ElectrumXJsonPropertyNames.TokenDataResult.CapabilityMinting => ElectrumXTokenNftCapability.Minting,
-                            _ => throw new JsonException("The NFT capability is not recognized.")
-                        }
-                        : throw new JsonException("The NFT capability must be a string.");
-                    break;
-                case ElectrumXJsonPropertyNames.TokenDataResult.Commitment:
-                    commitment = reader.TokenType == JsonTokenType.String
-                        ? reader.GetString()
-                        : throw new JsonException("The NFT commitment must be a string.");
-                    break;
-                default:
-                    reader.Skip();
-                    break;
-            }
-        }
-
-        if (reader.TokenType != JsonTokenType.EndObject)
-        {
-            throw new JsonException("NFT token data is incomplete.");
-        }
-
-        return new ElectrumXTokenNft(
-            capability ?? throw new JsonException("The NFT capability is missing."),
-            commitment);
-    }
-
-    internal static void WriteTokenData(Utf8JsonWriter writer, ElectrumXTokenData tokenData)
-    {
-        writer.WritePropertyName(ElectrumXJsonPropertyNames.UnspentOutputResult.TokenData);
-        writer.WriteStartObject();
-        writer.WriteString(ElectrumXJsonPropertyNames.TokenDataResult.Amount, tokenData.Amount);
-        writer.WriteString(ElectrumXJsonPropertyNames.TokenDataResult.Category, tokenData.Category);
-        if (tokenData.Nft is not null)
-        {
-            writer.WritePropertyName(ElectrumXJsonPropertyNames.TokenDataResult.Nft);
+            writer.WritePropertyName(ElectrumXJsonPropertyNames.UnspentOutputResult.TokenData);
             writer.WriteStartObject();
-            writer.WriteString(ElectrumXJsonPropertyNames.TokenDataResult.Capability, tokenData.Nft.Capability switch
+            writer.WriteString(
+                ElectrumXJsonPropertyNames.TokenDataResult.Amount,
+                value.TokenData.Amount.ToString(CultureInfo.InvariantCulture));
+            writer.WriteString(ElectrumXJsonPropertyNames.TokenDataResult.Category, value.TokenData.Category);
+            if (value.TokenData.Nft is not null)
             {
-                ElectrumXTokenNftCapability.None => ElectrumXJsonPropertyNames.TokenDataResult.CapabilityNone,
-                ElectrumXTokenNftCapability.Mutable => ElectrumXJsonPropertyNames.TokenDataResult.CapabilityMutable,
-                ElectrumXTokenNftCapability.Minting => ElectrumXJsonPropertyNames.TokenDataResult.CapabilityMinting,
-                _ => throw new JsonException("The NFT capability is not recognized.")
-            });
-            if (tokenData.Nft.Commitment is not null)
-            {
-                writer.WriteString(ElectrumXJsonPropertyNames.TokenDataResult.Commitment, tokenData.Nft.Commitment);
+                writer.WritePropertyName(ElectrumXJsonPropertyNames.TokenDataResult.Nft);
+                writer.WriteStartObject();
+                writer.WriteString(
+                    ElectrumXJsonPropertyNames.TokenDataResult.Capability,
+                    value.TokenData.Nft.Capability switch
+                    {
+                        ElectrumXTokenNftCapability.None => ElectrumXJsonPropertyNames.TokenDataResult.CapabilityNone,
+                        ElectrumXTokenNftCapability.Mutable => ElectrumXJsonPropertyNames.TokenDataResult.CapabilityMutable,
+                        ElectrumXTokenNftCapability.Minting => ElectrumXJsonPropertyNames.TokenDataResult.CapabilityMinting,
+                        _ => throw new JsonException("The NFT capability is not recognized.")
+                    });
+                writer.WriteString(ElectrumXJsonPropertyNames.TokenDataResult.Commitment, value.TokenData.Nft.Commitment);
+                writer.WriteEndObject();
             }
 
             writer.WriteEndObject();

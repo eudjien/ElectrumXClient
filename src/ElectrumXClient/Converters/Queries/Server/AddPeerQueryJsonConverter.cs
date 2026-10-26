@@ -3,6 +3,7 @@ using NorthGomel.ElectrumXClient.Abstractions.Models;
 using NorthGomel.ElectrumXClient.Abstractions.Models.Queries.Server;
 using NorthGomel.ElectrumXClient.Abstractions.Models.Results.Server;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace NorthGomel.ElectrumXClient.Converters.Queries.Server;
 
@@ -90,54 +91,15 @@ public sealed class AddPeerQueryJsonConverter : ElectrumXQueryJsonConverter<Elec
             writer.WriteNull(ElectrumXJsonPropertyNames.ServerFeaturesResult.Pruning);
         }
 
+        var jsonValueConverter = (JsonConverter<ElectrumXJsonValue>)options.GetConverter(typeof(ElectrumXJsonValue));
         foreach (var property in features.AdditionalProperties)
         {
             writer.WritePropertyName(property.Key);
-            WriteJsonValue(writer, property.Value);
+            jsonValueConverter.Write(writer, property.Value, options);
         }
 
         writer.WriteEndObject();
 
         writer.WriteEndArray();
-    }
-
-    private static void WriteJsonValue(Utf8JsonWriter writer, ElectrumXJsonValue value)
-    {
-        switch (value)
-        {
-            case ElectrumXJsonValue.StringValue stringValue:
-                writer.WriteStringValue(stringValue.Value);
-                break;
-            case ElectrumXJsonValue.NumberValue numberValue:
-                writer.WriteRawValue(numberValue.RawJson);
-                break;
-            case ElectrumXJsonValue.BooleanValue booleanValue:
-                writer.WriteBooleanValue(booleanValue.Value);
-                break;
-            case ElectrumXJsonValue.NullValue:
-                writer.WriteNullValue();
-                break;
-            case ElectrumXJsonValue.ArrayValue arrayValue:
-                writer.WriteStartArray();
-                foreach (var item in arrayValue.Items)
-                {
-                    WriteJsonValue(writer, item);
-                }
-
-                writer.WriteEndArray();
-                break;
-            case ElectrumXJsonValue.ObjectValue objectValue:
-                writer.WriteStartObject();
-                foreach (var property in objectValue.Properties)
-                {
-                    writer.WritePropertyName(property.Key);
-                    WriteJsonValue(writer, property.Value);
-                }
-
-                writer.WriteEndObject();
-                break;
-            default:
-                throw new JsonException($"Unsupported ElectrumX JSON value type '{value.GetType().Name}'.");
-        }
     }
 }

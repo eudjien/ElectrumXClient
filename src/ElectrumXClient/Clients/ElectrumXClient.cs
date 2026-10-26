@@ -33,10 +33,19 @@ public sealed class ElectrumXClient : IElectrumXClient
         _mempool = new ElectrumXMempoolClient(_rpcClient, false);
     }
 
+    /// <summary>Gets the blockchain API client.</summary>
     public IElectrumXBlockchainClient Blockchain => _blockchain;
+
+    /// <summary>Gets the server API client.</summary>
     public IElectrumXServerClient Server => _server;
+
+    /// <summary>Gets the masternode API client.</summary>
     public IElectrumXMasterNodeClient MasterNode => _masterNode;
+
+    /// <summary>Gets the ProTx API client.</summary>
     public IElectrumXProTxClient ProTx => _proTx;
+
+    /// <summary>Gets the mempool API client.</summary>
     public IElectrumXMempoolClient Mempool => _mempool;
 
     /// <inheritdoc />

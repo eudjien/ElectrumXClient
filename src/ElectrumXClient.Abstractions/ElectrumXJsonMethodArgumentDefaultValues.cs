@@ -1,3 +1,4 @@
+using NorthGomel.ElectrumXClient.Abstractions.Models.Queries.Blockchain;
 using NorthGomel.ElectrumXClient.Abstractions.Models.Results.Blockchain;
 
 namespace NorthGomel.ElectrumXClient.Abstractions;
@@ -7,7 +8,7 @@ public static class ElectrumXJsonMethodArgumentDefaultValues
 {
     public static class ElectrumXAddressBalanceQuery
     {
-        public const string? TokenFilter = null;
+        public static readonly ElectrumXTokenFilter? TokenFilter = null;
     }
 
     public static class ElectrumXAddressHistoryQuery
@@ -18,12 +19,12 @@ public static class ElectrumXJsonMethodArgumentDefaultValues
 
     public static class ElectrumXAddressListUnspentQuery
     {
-        public const string? TokenFilter = null;
+        public static readonly ElectrumXTokenFilter? TokenFilter = null;
     }
 
     public static class ElectrumXBalanceQuery
     {
-        public const string? TokenFilter = null;
+        public static readonly ElectrumXTokenFilter? TokenFilter = null;
     }
 
     public static class ElectrumXBlockHeadersQuery
@@ -54,7 +55,7 @@ public static class ElectrumXJsonMethodArgumentDefaultValues
 
     public static class ElectrumXListUnspentQuery
     {
-        public const string? TokenFilter = null;
+        public static readonly ElectrumXTokenFilter? TokenFilter = null;
     }
 
     public static class ElectrumXRpaHistoryQuery

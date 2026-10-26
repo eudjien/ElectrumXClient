@@ -41,19 +41,81 @@ public sealed class DoubleSpendProofResultJsonConverter : JsonConverter<Electrum
             switch (propertyName)
             {
                 case ElectrumXJsonPropertyNames.DoubleSpendProofResult.DoubleSpendProofId:
-                    doubleSpendProofId = ReadString(ref reader, "The double-spend proof ID must be a string.");
+                    doubleSpendProofId = reader.TokenType == JsonTokenType.String
+                        ? reader.GetString() ?? throw new JsonException("The double-spend proof ID must be a string.")
+                        : throw new JsonException("The double-spend proof ID must be a string.");
                     break;
                 case ElectrumXJsonPropertyNames.DoubleSpendProofResult.TransactionId:
-                    transactionId = ReadString(ref reader, "The double-spend proof transaction ID must be a string.");
+                    transactionId = reader.TokenType == JsonTokenType.String
+                        ? reader.GetString() ?? throw new JsonException("The double-spend proof transaction ID must be a string.")
+                        : throw new JsonException("The double-spend proof transaction ID must be a string.");
                     break;
                 case ElectrumXJsonPropertyNames.DoubleSpendProofResult.Hex:
-                    hex = ReadString(ref reader, "The double-spend proof hex must be a string.");
+                    hex = reader.TokenType == JsonTokenType.String
+                        ? reader.GetString() ?? throw new JsonException("The double-spend proof hex must be a string.")
+                        : throw new JsonException("The double-spend proof hex must be a string.");
                     break;
                 case ElectrumXJsonPropertyNames.DoubleSpendProofResult.Outpoint:
-                    outpoint = ReadOutpoint(ref reader);
+                    if (reader.TokenType != JsonTokenType.StartObject)
+                    {
+                        throw new JsonException("The double-spend proof outpoint must be an object.");
+                    }
+
+                    string? outpointTransactionId = null;
+                    int? outputIndex = null;
+                    while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+                    {
+                        if (reader.TokenType != JsonTokenType.PropertyName || !reader.Read())
+                        {
+                            throw new JsonException("The double-spend proof outpoint is incomplete.");
+                        }
+
+                        switch (reader.GetString())
+                        {
+                            case ElectrumXJsonPropertyNames.DoubleSpendProofResult.TransactionId:
+                                outpointTransactionId = reader.TokenType == JsonTokenType.String
+                                    ? reader.GetString() ?? throw new JsonException("The outpoint transaction ID must be a string.")
+                                    : throw new JsonException("The outpoint transaction ID must be a string.");
+                                break;
+                            case ElectrumXJsonPropertyNames.DoubleSpendProofResult.OutputIndex:
+                                outputIndex = reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out int parsedIndex)
+                                    ? parsedIndex
+                                    : throw new JsonException("The outpoint output index must be an integer.");
+                                break;
+                            default:
+                                reader.Skip();
+                                break;
+                        }
+                    }
+
+                    if (reader.TokenType != JsonTokenType.EndObject)
+                    {
+                        throw new JsonException("The double-spend proof outpoint is incomplete.");
+                    }
+
+                    outpoint = new ElectrumXDoubleSpendProofOutpoint(
+                        outpointTransactionId ?? throw new JsonException("The outpoint transaction ID is missing."),
+                        outputIndex ?? throw new JsonException("The outpoint output index is missing."));
                     break;
                 case ElectrumXJsonPropertyNames.DoubleSpendProofResult.Descendants:
-                    descendants = ReadDescendants(ref reader);
+                    if (reader.TokenType != JsonTokenType.StartArray)
+                    {
+                        throw new JsonException("The double-spend proof descendants must be an array.");
+                    }
+
+                    descendants = [];
+                    while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+                    {
+                        descendants.Add(
+                            reader.TokenType == JsonTokenType.String
+                                ? reader.GetString() ?? throw new JsonException("A double-spend proof descendant must be a string.")
+                                : throw new JsonException("A double-spend proof descendant must be a string."));
+                    }
+
+                    if (reader.TokenType != JsonTokenType.EndArray)
+                    {
+                        throw new JsonException("The double-spend proof descendants array is incomplete.");
+                    }
                     break;
                 default:
                     reader.Skip();
@@ -97,76 +159,5 @@ public sealed class DoubleSpendProofResultJsonConverter : JsonConverter<Electrum
 
         writer.WriteEndArray();
         writer.WriteEndObject();
-    }
-
-    private static string ReadString(ref Utf8JsonReader reader, string errorMessage)
-    {
-        return reader.TokenType == JsonTokenType.String
-            ? reader.GetString() ?? throw new JsonException(errorMessage)
-            : throw new JsonException(errorMessage);
-    }
-
-    private static ElectrumXDoubleSpendProofOutpoint ReadOutpoint(ref Utf8JsonReader reader)
-    {
-        if (reader.TokenType != JsonTokenType.StartObject)
-        {
-            throw new JsonException("The double-spend proof outpoint must be an object.");
-        }
-
-        string? transactionId = null;
-        int? outputIndex = null;
-
-        while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
-        {
-            if (reader.TokenType != JsonTokenType.PropertyName || !reader.Read())
-            {
-                throw new JsonException("The double-spend proof outpoint is incomplete.");
-            }
-
-            switch (reader.GetString())
-            {
-                case ElectrumXJsonPropertyNames.DoubleSpendProofResult.TransactionId:
-                    transactionId = ReadString(ref reader, "The outpoint transaction ID must be a string.");
-                    break;
-                case ElectrumXJsonPropertyNames.DoubleSpendProofResult.OutputIndex:
-                    outputIndex = reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out int index)
-                        ? index
-                        : throw new JsonException("The outpoint output index must be an integer.");
-                    break;
-                default:
-                    reader.Skip();
-                    break;
-            }
-        }
-
-        if (reader.TokenType != JsonTokenType.EndObject)
-        {
-            throw new JsonException("The double-spend proof outpoint is incomplete.");
-        }
-
-        return new ElectrumXDoubleSpendProofOutpoint(
-            transactionId ?? throw new JsonException("The outpoint transaction ID is missing."),
-            outputIndex ?? throw new JsonException("The outpoint output index is missing."));
-    }
-
-    private static List<string> ReadDescendants(ref Utf8JsonReader reader)
-    {
-        if (reader.TokenType != JsonTokenType.StartArray)
-        {
-            throw new JsonException("The double-spend proof descendants must be an array.");
-        }
-
-        var descendants = new List<string>();
-        while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
-        {
-            descendants.Add(ReadString(ref reader, "A double-spend proof descendant must be a string."));
-        }
-
-        if (reader.TokenType != JsonTokenType.EndArray)
-        {
-            throw new JsonException("The double-spend proof descendants array is incomplete.");
-        }
-
-        return descendants;
     }
 }

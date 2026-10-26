@@ -1,3 +1,5 @@
+using NorthGomel.ElectrumXClient.Abstractions.Models.Results.Blockchain;
+using NorthGomel.ElectrumXClient.Abstractions.Models.Results.Mempool;
 using NorthGomel.ElectrumXClient.Converters.JsonRpc;
 using NorthGomel.ElectrumXClient.Converters.Notifications;
 using NorthGomel.ElectrumXClient.Converters.Queries.Blockchain;
@@ -155,8 +157,8 @@ public static class SystemTextJsonConverterExtensions
                 throw new ArgumentNullException(nameof(options));
             }
 
-            options.Converters.Add(new ElectrumXJsonValueResultJsonConverter());
-            options.Converters.Add(new ElectrumXJsonValueEnvelopeResultJsonConverter());
+            options.Converters.Add(new ElectrumXJsonValueJsonConverter());
+            options.Converters.Add(new ElectrumXDaemonPassthroughResultJsonConverter());
             options.Converters.Add(new AddressScriptHashResultJsonConverter());
             options.Converters.Add(new AddressStatusResultJsonConverter());
             options.Converters.Add(new AddressSubscriptionResultJsonConverter());
@@ -224,6 +226,57 @@ public static class SystemTextJsonConverterExtensions
             options.Converters.Add(new VerboseTransactionResultJsonConverter());
             options.Converters.Add(new VerboseTransactionInputResultJsonConverter());
             options.Converters.Add(new VerboseTransactionOutputResultJsonConverter());
+            options.Converters.Add(new ElectrumXResultAliasJsonConverter<ElectrumXBalance, ElectrumXAddressBalance>(
+                result => new ElectrumXAddressBalance(result.Confirmed, result.Unconfirmed),
+                result => new ElectrumXBalance(result.Confirmed, result.Unconfirmed)));
+            options.Converters.Add(new ElectrumXResultAliasJsonConverter<ElectrumXHistory, ElectrumXAddressHistory>(
+                result => new ElectrumXAddressHistory(result.Value),
+                result => new ElectrumXHistory(result.Value)));
+            options.Converters.Add(new ElectrumXResultAliasJsonConverter<ElectrumXMempool, ElectrumXAddressMempool>(
+                result => new ElectrumXAddressMempool(result.Value),
+                result => new ElectrumXMempool(result.Value)));
+            options.Converters.Add(new ElectrumXResultAliasJsonConverter<ElectrumXUnspentOutputs, ElectrumXAddressUnspentOutputs>(
+                result => new ElectrumXAddressUnspentOutputs(result.Value),
+                result => new ElectrumXUnspentOutputs(result.Value)));
+            options.Converters.Add(new ElectrumXResultAliasJsonConverter<ElectrumXFirstUse, ElectrumXAddressFirstUse>(
+                result => new ElectrumXAddressFirstUse(result.BlockHash, result.Height, result.TransactionHash),
+                result => new ElectrumXFirstUse(result.BlockHash, result.Height, result.TransactionHash)));
+            options.Converters.Add(new ElectrumXResultAliasJsonConverter<ElectrumXFirstUse, ElectrumXScriptHashFirstUse>(
+                result => new ElectrumXScriptHashFirstUse(result.BlockHash, result.Height, result.TransactionHash),
+                result => new ElectrumXFirstUse(result.BlockHash, result.Height, result.TransactionHash)));
+            options.Converters.Add(new ElectrumXResultAliasJsonConverter<ElectrumXHistoryList, ElectrumXRpaHistory>(
+                result => new ElectrumXRpaHistory(result.Value),
+                result => new ElectrumXHistoryList(result.Value)));
+            options.Converters.Add(new ElectrumXResultAliasJsonConverter<ElectrumXMempoolEntryList, ElectrumXRpaMempool>(
+                result => new ElectrumXRpaMempool(result.Value),
+                result => new ElectrumXMempoolEntryList(result.Value)));
+            options.Converters.Add(new ElectrumXResultAliasJsonConverter<ElectrumXHistoryList, ElectrumXReusableHistory>(
+                result => new ElectrumXReusableHistory(result.Value),
+                result => new ElectrumXHistoryList(result.Value)));
+            options.Converters.Add(new ElectrumXResultAliasJsonConverter<ElectrumXMempoolEntryList, ElectrumXReusableMempool>(
+                result => new ElectrumXReusableMempool(result.Value),
+                result => new ElectrumXMempoolEntryList(result.Value)));
+            options.Converters.Add(new ElectrumXResultAliasJsonConverter<ElectrumXHeaderInfo, ElectrumXHeaderTip>(
+                result => new ElectrumXHeaderTip(result.Height, result.Hex),
+                result => new ElectrumXHeaderInfo(result.Height, result.Hex)));
+            options.Converters.Add(new ElectrumXResultAliasJsonConverter<ElectrumXDoubleSpendProof, ElectrumXSubscribedDoubleSpendProof>(
+                result => new ElectrumXSubscribedDoubleSpendProof(
+                    result.DoubleSpendProofId,
+                    result.TransactionId,
+                    result.Hex,
+                    result.Outpoint,
+                    result.Descendants),
+                result => new ElectrumXDoubleSpendProof(
+                    result.DoubleSpendProofId,
+                    result.TransactionId,
+                    result.Hex,
+                    result.Outpoint,
+                    result.Descendants)));
+            options.Converters.Add(new ElectrumXResultAliasJsonConverter<ElectrumXBlockHeader, ElectrumXLegacyBlockHeader>(
+                result => new ElectrumXLegacyBlockHeader(result.Value),
+                result => new ElectrumXBlockHeader(result.Value)));
+            options.Converters.Add(new ElectrumXTransactionPackageBroadcastResultJsonConverter());
+            options.Converters.Add(new ElectrumXVerboseTransactionPackageBroadcastResultJsonConverter());
 
             return options;
         }

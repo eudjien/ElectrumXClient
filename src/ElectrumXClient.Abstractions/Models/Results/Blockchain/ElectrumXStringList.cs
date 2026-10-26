@@ -7,4 +7,12 @@ public sealed class ElectrumXStringList(IReadOnlyList<string> value) : ElectrumX
 {
     /// <summary>The returned strings.</summary>
     public IReadOnlyList<string> Value { get; } = value;
+
+    /// <summary>Converts the response to its string values.</summary>
+    /// <param name="response">The string-list response.</param>
+    /// <returns>The contained strings.</returns>
+    public static implicit operator string[](ElectrumXStringList response)
+    {
+        return [.. response.Value];
+    }
 }

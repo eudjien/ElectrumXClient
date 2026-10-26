@@ -1,4 +1,4 @@
-using NorthGomel.ElectrumXClient.Abstractions.Models.Queries.MasterNode;
+using NorthGomel.ElectrumXClient.Abstractions.Models.Queries.Masternode;
 using System.Text.Json;
 
 namespace NorthGomel.ElectrumXClient.Converters.Queries.MasterNode;

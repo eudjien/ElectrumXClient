@@ -35,13 +35,19 @@ public sealed class FirstUseResultJsonConverter : JsonConverter<ElectrumXFirstUs
             switch (propertyName)
             {
                 case ElectrumXJsonPropertyNames.FirstUseResult.BlockHash:
-                    blockHash = ReadString(ref reader, "The first-use block hash must be a string.");
+                    blockHash = reader.TokenType == JsonTokenType.String
+                        ? reader.GetString() ?? throw new JsonException("The first-use block hash must be a string.")
+                        : throw new JsonException("The first-use block hash must be a string.");
                     break;
                 case ElectrumXJsonPropertyNames.FirstUseResult.Height:
-                    height = ReadInt64(ref reader, "The first-use block height must be an integer.");
+                    height = reader.TokenType == JsonTokenType.Number && reader.TryGetInt64(out long blockHeight)
+                        ? blockHeight
+                        : throw new JsonException("The first-use block height must be an integer.");
                     break;
                 case ElectrumXJsonPropertyNames.FirstUseResult.TransactionHash:
-                    transactionHash = ReadString(ref reader, "The first-use transaction hash must be a string.");
+                    transactionHash = reader.TokenType == JsonTokenType.String
+                        ? reader.GetString() ?? throw new JsonException("The first-use transaction hash must be a string.")
+                        : throw new JsonException("The first-use transaction hash must be a string.");
                     break;
                 default:
                     reader.Skip();
@@ -67,19 +73,5 @@ public sealed class FirstUseResultJsonConverter : JsonConverter<ElectrumXFirstUs
         writer.WriteNumber(ElectrumXJsonPropertyNames.FirstUseResult.Height, value.Height);
         writer.WriteString(ElectrumXJsonPropertyNames.FirstUseResult.TransactionHash, value.TransactionHash);
         writer.WriteEndObject();
-    }
-
-    internal static string ReadString(ref Utf8JsonReader reader, string message)
-    {
-        return reader.TokenType == JsonTokenType.String
-            ? reader.GetString() ?? throw new JsonException(message)
-            : throw new JsonException(message);
-    }
-
-    internal static long ReadInt64(ref Utf8JsonReader reader, string message)
-    {
-        return reader.TokenType == JsonTokenType.Number && reader.TryGetInt64(out long value)
-            ? value
-            : throw new JsonException(message);
     }
 }

@@ -16,12 +16,17 @@ public abstract class ElectrumXClientBase(IElectrumXRpcClient rpcClient, bool ow
     private readonly IElectrumXRpcClient _rpcClient = rpcClient ?? throw new ArgumentNullException(nameof(rpcClient));
     private int _disposed;
 
+    /// <summary>Gets the JSON-RPC transport used by this client.</summary>
     protected IElectrumXRpcClient RpcClient => _rpcClient;
 
+    /// <summary>Gets whether this client is responsible for disposing the JSON-RPC transport.</summary>
     protected bool OwnsRpcClient => ownsRpcClient;
 
+    /// <summary>Gets the server software and negotiated protocol version.</summary>
     public abstract ElectrumXServerVersion ServerVersion { get; }
 
+    /// <summary>Disposes this client and, when owned, its JSON-RPC transport.</summary>
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
     public virtual async ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
@@ -32,6 +37,8 @@ public abstract class ElectrumXClientBase(IElectrumXRpcClient rpcClient, bool ow
         await DisposeCoreAsync().ConfigureAwait(false);
     }
 
+    /// <summary>Throws if this client has already been disposed.</summary>
+    /// <exception cref="ObjectDisposedException">The client has been disposed.</exception>
     protected void ThrowIfDisposed()
     {
         if (Interlocked.CompareExchange(ref _disposed, 0, 0) != 0)
@@ -40,6 +47,10 @@ public abstract class ElectrumXClientBase(IElectrumXRpcClient rpcClient, bool ow
         }
     }
 
+    /// <summary>Ensures that the negotiated protocol version supports the specified method.</summary>
+    /// <param name="minimumVersion">The minimum supported protocol version.</param>
+    /// <param name="methodName">The method name used in the exception message.</param>
+    /// <exception cref="NotSupportedException">The negotiated protocol version is older than <paramref name="minimumVersion" />.</exception>
     protected void EnsureProtocolMinimumVersion(ElectrumXProtocolVersion minimumVersion, string methodName)
     {
         if (ServerVersion.ProtocolVersion < minimumVersion)
@@ -49,6 +60,13 @@ public abstract class ElectrumXClientBase(IElectrumXRpcClient rpcClient, bool ow
         }
     }
 
+    /// <summary>Sends a JSON-RPC request and requires a non-null result.</summary>
+    /// <typeparam name="TResult">The expected result model type.</typeparam>
+    /// <typeparam name="TQuery">The query model type.</typeparam>
+    /// <param name="request">The request to send.</param>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
+    /// <returns>The deserialized result.</returns>
+    /// <exception cref="ElectrumXProtocolException">The server response does not contain a result.</exception>
     protected async Task<TResult> CallOrThrowAsync<TResult, TQuery>(JsonRpcRequest<TQuery> request, CancellationToken cancellationToken)
         where TResult : ElectrumXResult
         where TQuery : ElectrumXQuery
@@ -57,6 +75,12 @@ public abstract class ElectrumXClientBase(IElectrumXRpcClient rpcClient, bool ow
                ?? throw new ElectrumXProtocolException("The ElectrumX result response did not contain data.");
     }
 
+    /// <summary>Sends a JSON-RPC request and returns its result, which may be null.</summary>
+    /// <typeparam name="TResult">The expected result model type.</typeparam>
+    /// <typeparam name="TQuery">The query model type.</typeparam>
+    /// <param name="request">The request to send.</param>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
+    /// <returns>The deserialized result, or <see langword="null" /> when the response has no result.</returns>
     protected async Task<TResult?> CallAsync<TResult, TQuery>(
         JsonRpcRequest<TQuery> request,
         CancellationToken cancellationToken)
@@ -66,6 +90,8 @@ public abstract class ElectrumXClientBase(IElectrumXRpcClient rpcClient, bool ow
         return (await RpcClient.CallAsync<TResult, TQuery>(request, cancellationToken).ConfigureAwait(false)).Result;
     }
 
+    /// <summary>Releases resources owned by the derived client.</summary>
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
     protected virtual ValueTask DisposeCoreAsync()
     {
         return OwnsRpcClient

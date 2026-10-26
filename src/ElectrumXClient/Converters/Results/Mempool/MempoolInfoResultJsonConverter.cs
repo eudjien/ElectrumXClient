@@ -41,13 +41,19 @@ public sealed class MempoolInfoResultJsonConverter : JsonConverter<ElectrumXMemp
             switch (propertyName)
             {
                 case ElectrumXJsonPropertyNames.MempoolInfoResult.MempoolMinimumFee:
-                    mempoolMinimumFee = ReadDecimal(ref reader);
+                    mempoolMinimumFee = reader.TokenType == JsonTokenType.Number && reader.TryGetDecimal(out decimal minimumFee)
+                        ? minimumFee
+                        : throw new JsonException("A mempool fee rate must be a number.");
                     break;
                 case ElectrumXJsonPropertyNames.MempoolInfoResult.MinimumRelayFee:
-                    minimumRelayFee = ReadDecimal(ref reader);
+                    minimumRelayFee = reader.TokenType == JsonTokenType.Number && reader.TryGetDecimal(out decimal relayFee)
+                        ? relayFee
+                        : throw new JsonException("A mempool fee rate must be a number.");
                     break;
                 case ElectrumXJsonPropertyNames.MempoolInfoResult.IncrementalRelayFee:
-                    incrementalRelayFee = ReadDecimal(ref reader);
+                    incrementalRelayFee = reader.TokenType == JsonTokenType.Number && reader.TryGetDecimal(out decimal incrementalFee)
+                        ? incrementalFee
+                        : throw new JsonException("A mempool fee rate must be a number.");
                     break;
                 case ElectrumXJsonPropertyNames.MempoolInfoResult.UnbroadcastCount:
                     unbroadcastCount = reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out int count)
@@ -118,17 +124,19 @@ public sealed class MempoolInfoResultJsonConverter : JsonConverter<ElectrumXMemp
         var jsonValueConverter = (JsonConverter<ElectrumXJsonValue>)options.GetConverter(typeof(ElectrumXJsonValue));
         foreach ((string name, var propertyValue) in value.AdditionalProperties)
         {
+            if (name is ElectrumXJsonPropertyNames.MempoolInfoResult.MempoolMinimumFee or
+                ElectrumXJsonPropertyNames.MempoolInfoResult.MinimumRelayFee or
+                ElectrumXJsonPropertyNames.MempoolInfoResult.IncrementalRelayFee or
+                ElectrumXJsonPropertyNames.MempoolInfoResult.UnbroadcastCount or
+                ElectrumXJsonPropertyNames.MempoolInfoResult.FullReplaceByFee)
+            {
+                continue;
+            }
+
             writer.WritePropertyName(name);
             jsonValueConverter.Write(writer, propertyValue, options);
         }
 
         writer.WriteEndObject();
-    }
-
-    private static decimal ReadDecimal(ref Utf8JsonReader reader)
-    {
-        return reader.TokenType == JsonTokenType.Number && reader.TryGetDecimal(out decimal value)
-            ? value
-            : throw new JsonException("A mempool fee rate must be a number.");
     }
 }

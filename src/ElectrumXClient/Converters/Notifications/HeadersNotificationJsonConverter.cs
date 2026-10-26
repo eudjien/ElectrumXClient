@@ -1,8 +1,8 @@
 using NorthGomel.ElectrumXClient.Abstractions;
 using NorthGomel.ElectrumXClient.Abstractions.Models;
 using NorthGomel.ElectrumXClient.Abstractions.Models.Notifications;
-using NorthGomel.ElectrumXClient.Converters.Results.Blockchain;
 using System;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -37,7 +37,37 @@ public sealed class HeadersNotificationJsonConverter
             throw new JsonException("Header notification parameters must contain exactly one item.");
         }
 
-        (long? height, string? hex, bool hasRawHeight) = ElectrumXHeaderValueReader.ReadFields(value);
+        long? height = null;
+        string? hex = null;
+        bool hasRawHeight = false;
+        if (value is ElectrumXJsonValue.ObjectValue objectValue)
+        {
+            foreach ((string name, var propertyValue) in objectValue.Properties)
+            {
+                switch (name)
+                {
+                    case ElectrumXJsonPropertyNames.BlockHeaderSubscriptionResult.Height:
+                        hasRawHeight = true;
+                        goto case ElectrumXJsonPropertyNames.DeserializedBlockHeader.BlockHeight;
+                    case ElectrumXJsonPropertyNames.DeserializedBlockHeader.BlockHeight:
+                        height = propertyValue is ElectrumXJsonValue.NumberValue numberValue &&
+                                 long.TryParse(
+                                     numberValue.RawJson,
+                                     NumberStyles.Integer,
+                                     CultureInfo.InvariantCulture,
+                                     out long parsedHeight)
+                            ? parsedHeight
+                            : throw new JsonException("The block-header height must be a 64-bit integer.");
+                        break;
+                    case ElectrumXJsonPropertyNames.BlockHeaderSubscriptionResult.Hex:
+                        hex = propertyValue is ElectrumXJsonValue.StringValue stringValue
+                            ? stringValue.Value
+                            : throw new JsonException("The block-header hex must be a string.");
+                        break;
+                }
+            }
+        }
+
         bool isCurrentFormat = hasRawHeight && height.HasValue && hex is not null;
         if (height is < int.MinValue or > int.MaxValue)
         {

@@ -287,52 +287,24 @@ public sealed class ServerFeaturesResultJsonConverter : JsonConverter<ElectrumXS
             writer.WriteNullValue();
         }
 
+        var jsonValueConverter = (JsonConverter<ElectrumXJsonValue>)options.GetConverter(typeof(ElectrumXJsonValue));
         foreach ((string name, var propertyValue) in value.AdditionalProperties)
         {
+            if (name is ElectrumXJsonPropertyNames.ServerFeaturesResult.Hosts or
+                ElectrumXJsonPropertyNames.ServerFeaturesResult.GenesisHash or
+                ElectrumXJsonPropertyNames.ServerFeaturesResult.HashFunction or
+                ElectrumXJsonPropertyNames.ServerFeaturesResult.ServerVersion or
+                ElectrumXJsonPropertyNames.ServerFeaturesResult.ProtocolMinimum or
+                ElectrumXJsonPropertyNames.ServerFeaturesResult.ProtocolMaximum or
+                ElectrumXJsonPropertyNames.ServerFeaturesResult.Pruning)
+            {
+                continue;
+            }
+
             writer.WritePropertyName(name);
-            WriteJsonValue(writer, propertyValue);
+            jsonValueConverter.Write(writer, propertyValue, options);
         }
 
         writer.WriteEndObject();
-    }
-
-    private static void WriteJsonValue(Utf8JsonWriter writer, ElectrumXJsonValue value)
-    {
-        switch (value)
-        {
-            case ElectrumXJsonValue.StringValue stringValue:
-                writer.WriteStringValue(stringValue.Value);
-                break;
-            case ElectrumXJsonValue.NumberValue numberValue:
-                writer.WriteRawValue(numberValue.RawJson);
-                break;
-            case ElectrumXJsonValue.BooleanValue booleanValue:
-                writer.WriteBooleanValue(booleanValue.Value);
-                break;
-            case ElectrumXJsonValue.NullValue:
-                writer.WriteNullValue();
-                break;
-            case ElectrumXJsonValue.ArrayValue arrayValue:
-                writer.WriteStartArray();
-                foreach (var item in arrayValue.Items)
-                {
-                    WriteJsonValue(writer, item);
-                }
-
-                writer.WriteEndArray();
-                break;
-            case ElectrumXJsonValue.ObjectValue objectValue:
-                writer.WriteStartObject();
-                foreach ((string name, var propertyValue) in objectValue.Properties)
-                {
-                    writer.WritePropertyName(name);
-                    WriteJsonValue(writer, propertyValue);
-                }
-
-                writer.WriteEndObject();
-                break;
-            default:
-                throw new JsonException($"Unsupported ElectrumX JSON value type '{value.GetType().Name}'.");
-        }
     }
 }

@@ -35,24 +35,7 @@ public sealed class ElectrumXServerFeatures : ElectrumXResult
         {
             foreach ((string name, var value) in additionalProperties)
             {
-
-                if (name is null)
-                {
-                    throw new ArgumentException("Additional server feature names cannot be null.", nameof(additionalProperties));
-                }
-
-                if (IsKnownProperty(name))
-                {
-                    throw new ArgumentException(
-                        $"'{name}' is a standard server.features property and cannot be an additional property.",
-                        nameof(additionalProperties));
-                }
-
-                additionalPropertiesCopy.Add(
-                    name,
-                    value ?? throw new ArgumentException(
-                        "Additional server feature values cannot be null; use ElectrumXJsonValue.NullValue.Instance.",
-                        nameof(additionalProperties)));
+                additionalPropertiesCopy[name] = value;
             }
         }
 
@@ -82,15 +65,4 @@ public sealed class ElectrumXServerFeatures : ElectrumXResult
 
     /// <summary>Additional server feature fields not defined by the current protocol model.</summary>
     public IReadOnlyDictionary<string, ElectrumXJsonValue> AdditionalProperties { get; }
-
-    private static bool IsKnownProperty(string name)
-    {
-        return name is ElectrumXJsonPropertyNames.ServerFeaturesResult.Hosts or
-            ElectrumXJsonPropertyNames.ServerFeaturesResult.GenesisHash or
-            ElectrumXJsonPropertyNames.ServerFeaturesResult.HashFunction or
-            ElectrumXJsonPropertyNames.ServerFeaturesResult.ServerVersion or
-            ElectrumXJsonPropertyNames.ServerFeaturesResult.ProtocolMinimum or
-            ElectrumXJsonPropertyNames.ServerFeaturesResult.ProtocolMaximum or
-            ElectrumXJsonPropertyNames.ServerFeaturesResult.Pruning;
-    }
 }

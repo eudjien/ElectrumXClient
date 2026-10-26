@@ -12,6 +12,9 @@ public abstract class ElectrumXJsonValue
     {
     }
 
+    /// <summary>Converts a string to a JSON string value.</summary>
+    /// <param name="value">The string to wrap.</param>
+    /// <returns>A JSON value containing the string.</returns>
     public static implicit operator ElectrumXJsonValue(string value)
     {
         return new StringValue(value);
@@ -166,7 +169,6 @@ public abstract class ElectrumXJsonValue
     /// <summary>The JSON null value.</summary>
     public sealed class NullValue : ElectrumXJsonValue
     {
-
         private NullValue()
         {
         }

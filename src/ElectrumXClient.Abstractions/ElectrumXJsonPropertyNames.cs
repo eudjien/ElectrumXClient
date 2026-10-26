@@ -209,6 +209,29 @@ public static class ElectrumXJsonPropertyNames
         public const string Data = "data";
     }
 
+    public static class TransactionPackageBroadcastResult
+    {
+        public const string Success = "success";
+        public const string Errors = "errors";
+        public const string TransactionId = "txid";
+        public const string Error = "error";
+    }
+
+    public static class VerboseTransactionPackageBroadcastResult
+    {
+        public const string PackageMessage = "package_msg";
+        public const string TransactionResults = "tx-results";
+        public const string ReplacedTransactions = "replaced-transactions";
+        public const string TransactionId = "txid";
+        public const string OtherWitnessTransactionId = "other-wtxid";
+        public const string VirtualSize = "vsize";
+        public const string Fees = "fees";
+        public const string Error = "error";
+        public const string BaseFee = "base";
+        public const string EffectiveFeeRate = "effective-feerate";
+        public const string EffectiveIncludes = "effective-includes";
+    }
+
     public static class ServerFeaturesResult
     {
         public const string Hosts = "hosts";

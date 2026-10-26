@@ -12,6 +12,9 @@ public sealed class ElectrumXRelayFee : ElectrumXResult
     /// <summary>Minimum relay fee in whole coin units per kilobyte.</summary>
     public decimal Value { get; }
 
+    /// <summary>Converts the response to the relay fee rate.</summary>
+    /// <param name="response">The relay fee response.</param>
+    /// <returns>The fee rate in whole coin units per kilobyte.</returns>
     public static implicit operator decimal(ElectrumXRelayFee response)
     {
         return response.Value;

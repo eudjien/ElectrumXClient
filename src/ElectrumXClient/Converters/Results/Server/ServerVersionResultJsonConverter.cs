@@ -1,6 +1,7 @@
 using NorthGomel.ElectrumXClient.Abstractions;
 using NorthGomel.ElectrumXClient.Abstractions.Models.Results.Server;
 using System;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -41,10 +42,20 @@ public sealed class ServerVersionResultJsonConverter : JsonConverter<ElectrumXSe
         string protocolVersionValue = reader.GetString()
                                       ?? throw new JsonException("The server version response must contain exactly two strings.");
 
-        if (!ElectrumXProtocolVersion.TryParse(protocolVersionValue, out var protocolVersion))
+        int patch = -1;
+        string[] versionComponents = protocolVersionValue.Split('.');
+        if (versionComponents.Length is < 2 or > 3 ||
+            !int.TryParse(versionComponents[0], NumberStyles.None, CultureInfo.InvariantCulture, out int major) ||
+            !int.TryParse(versionComponents[1], NumberStyles.None, CultureInfo.InvariantCulture, out int minor) ||
+            versionComponents.Length == 3 &&
+            !int.TryParse(versionComponents[2], NumberStyles.None, CultureInfo.InvariantCulture, out patch))
         {
             throw new JsonException("The server version response must contain a valid protocol version.");
         }
+
+        var protocolVersion = versionComponents.Length == 3
+            ? new ElectrumXProtocolVersion(major, minor, patch)
+            : new ElectrumXProtocolVersion(major, minor);
 
         if (!reader.Read() || reader.TokenType != JsonTokenType.EndArray)
         {

@@ -99,7 +99,7 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public async Task<ElectrumXJsonValueResult> GetLegacyBlockHeaderAsync(
+    public async Task<ElectrumXLegacyBlockHeader> GetLegacyBlockHeaderAsync(
         long height,
         CancellationToken cancellationToken = default)
     {
@@ -108,7 +108,7 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
             ElectrumXProtocolVersions.Version100,
             ElectrumXProtocolVersions.Version140,
             ElectrumXJsonMethodNames.Blockchain.Block.GetHeader);
-        return await CallOrThrowAsync<ElectrumXJsonValueResult, ElectrumXLegacyBlockHeaderQuery>(
+        return await CallOrThrowAsync<ElectrumXLegacyBlockHeader, ElectrumXLegacyBlockHeaderQuery>(
             new JsonRpcRequest<ElectrumXLegacyBlockHeaderQuery>(
                 ElectrumXJsonMethodNames.Blockchain.Block.GetHeader,
                 new ElectrumXLegacyBlockHeaderQuery(height)),
@@ -213,7 +213,7 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public async Task<ElectrumXBalance> GetBalanceAsync(string scriptHash, string? tokenFilter, CancellationToken cancellationToken = default)
+    public async Task<ElectrumXBalance> GetBalanceAsync(string scriptHash, ElectrumXTokenFilter? tokenFilter, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version110, ElectrumXJsonMethodNames.Blockchain.ScriptHash.GetBalance);
@@ -280,7 +280,8 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public async Task<ElectrumXUnspentOutputs> ListUnspentAsync(string scriptHash, string? tokenFilter, CancellationToken cancellationToken = default)
+    public async Task<ElectrumXUnspentOutputs> ListUnspentAsync(string scriptHash, ElectrumXTokenFilter? tokenFilter,
+        CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version110, ElectrumXJsonMethodNames.Blockchain.ScriptHash.ListUnspent);
@@ -382,18 +383,24 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public async Task<ElectrumXJsonValueResult> BroadcastTransactionPackageAsync(
+    public async Task<ElectrumXTransactionPackageBroadcast> BroadcastTransactionPackageAsync(
         IReadOnlyList<string> rawTransactions,
-        bool verbose = ElectrumXJsonMethodArgumentDefaultValues.ElectrumXBroadcastPackageQuery.Verbose,
         CancellationToken cancellationToken = default)
     {
-        ThrowIfDisposed();
-        EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version160, ElectrumXJsonMethodNames.Blockchain.Transaction.BroadcastPackage);
+        return await BroadcastTransactionPackageCoreAsync<ElectrumXTransactionPackageBroadcast>(
+            rawTransactions,
+            ElectrumXJsonMethodArgumentDefaultValues.ElectrumXBroadcastPackageQuery.Verbose,
+            cancellationToken).ConfigureAwait(false);
+    }
 
-        return await CallOrThrowAsync<ElectrumXJsonValueResult, ElectrumXBroadcastPackageQuery>(
-            new JsonRpcRequest<ElectrumXBroadcastPackageQuery>(
-                ElectrumXJsonMethodNames.Blockchain.Transaction.BroadcastPackage,
-                new ElectrumXBroadcastPackageQuery(rawTransactions, verbose)),
+    /// <inheritdoc />
+    public async Task<ElectrumXVerboseTransactionPackageBroadcast> BroadcastTransactionPackageVerboseAsync(
+        IReadOnlyList<string> rawTransactions,
+        CancellationToken cancellationToken = default)
+    {
+        return await BroadcastTransactionPackageCoreAsync<ElectrumXVerboseTransactionPackageBroadcast>(
+            rawTransactions,
+            true,
             cancellationToken).ConfigureAwait(false);
     }
 
@@ -482,9 +489,9 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public async Task<ElectrumXBalance> GetAddressBalanceAsync(
+    public async Task<ElectrumXAddressBalance> GetAddressBalanceAsync(
         string address,
-        string? tokenFilter = ElectrumXJsonMethodArgumentDefaultValues.ElectrumXAddressBalanceQuery.TokenFilter,
+        ElectrumXTokenFilter? tokenFilter = null,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -494,7 +501,7 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
             EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version150, ElectrumXJsonMethodNames.Blockchain.Address.GetBalance);
         }
 
-        return await CallOrThrowAsync<ElectrumXBalance, ElectrumXAddressBalanceQuery>(
+        return await CallOrThrowAsync<ElectrumXAddressBalance, ElectrumXAddressBalanceQuery>(
             new JsonRpcRequest<ElectrumXAddressBalanceQuery>(
                 ElectrumXJsonMethodNames.Blockchain.Address.GetBalance,
                 new ElectrumXAddressBalanceQuery(address, tokenFilter)),
@@ -502,7 +509,7 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public async Task<ElectrumXHistory> GetAddressHistoryAsync(
+    public async Task<ElectrumXAddressHistory> GetAddressHistoryAsync(
         string address,
         long fromHeight = ElectrumXJsonMethodArgumentDefaultValues.ElectrumXAddressHistoryQuery.FromHeight,
         long toHeight = ElectrumXJsonMethodArgumentDefaultValues.ElectrumXAddressHistoryQuery.ToHeight,
@@ -516,7 +523,7 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
             EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version151, ElectrumXJsonMethodNames.Blockchain.Address.GetHistory);
         }
 
-        return await CallOrThrowAsync<ElectrumXHistory, ElectrumXAddressHistoryQuery>(
+        return await CallOrThrowAsync<ElectrumXAddressHistory, ElectrumXAddressHistoryQuery>(
             new JsonRpcRequest<ElectrumXAddressHistoryQuery>(
                 ElectrumXJsonMethodNames.Blockchain.Address.GetHistory,
                 new ElectrumXAddressHistoryQuery(address, fromHeight, toHeight)),
@@ -524,12 +531,12 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public async Task<ElectrumXMempool> GetAddressMempoolAsync(string address, CancellationToken cancellationToken = default)
+    public async Task<ElectrumXAddressMempool> GetAddressMempoolAsync(string address, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         EnsureAddressCompatibilityMethod(ElectrumXJsonMethodNames.Blockchain.Address.GetMempool);
 
-        return await CallOrThrowAsync<ElectrumXMempool, ElectrumXAddressMempoolQuery>(
+        return await CallOrThrowAsync<ElectrumXAddressMempool, ElectrumXAddressMempoolQuery>(
             new JsonRpcRequest<ElectrumXAddressMempoolQuery>(
                 ElectrumXJsonMethodNames.Blockchain.Address.GetMempool,
                 new ElectrumXAddressMempoolQuery(address)),
@@ -537,9 +544,9 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public async Task<ElectrumXUnspentOutputs> ListAddressUnspentAsync(
+    public async Task<ElectrumXAddressUnspentOutputs> ListAddressUnspentAsync(
         string address,
-        string? tokenFilter = ElectrumXJsonMethodArgumentDefaultValues.ElectrumXAddressListUnspentQuery.TokenFilter,
+        ElectrumXTokenFilter? tokenFilter = null,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -549,7 +556,7 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
             EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version150, ElectrumXJsonMethodNames.Blockchain.Address.ListUnspent);
         }
 
-        return await CallOrThrowAsync<ElectrumXUnspentOutputs, ElectrumXAddressListUnspentQuery>(
+        return await CallOrThrowAsync<ElectrumXAddressUnspentOutputs, ElectrumXAddressListUnspentQuery>(
             new JsonRpcRequest<ElectrumXAddressListUnspentQuery>(
                 ElectrumXJsonMethodNames.Blockchain.Address.ListUnspent,
                 new ElectrumXAddressListUnspentQuery(address, tokenFilter)),
@@ -569,11 +576,11 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public Task<ElectrumXFirstUse?> GetAddressFirstUseAsync(string address, CancellationToken cancellationToken = default)
+    public Task<ElectrumXAddressFirstUse?> GetAddressFirstUseAsync(string address, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version152, ElectrumXJsonMethodNames.Blockchain.Address.GetFirstUse);
-        return CallAsync<ElectrumXFirstUse, ElectrumXAddressFirstUseQuery>(
+        return CallAsync<ElectrumXAddressFirstUse, ElectrumXAddressFirstUseQuery>(
             new JsonRpcRequest<ElectrumXAddressFirstUseQuery>(
                 ElectrumXJsonMethodNames.Blockchain.Address.GetFirstUse,
                 new ElectrumXAddressFirstUseQuery(address)),
@@ -698,13 +705,13 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public Task<ElectrumXDoubleSpendProof?> SubscribeToDoubleSpendProofAsync(
+    public Task<ElectrumXSubscribedDoubleSpendProof?> SubscribeToDoubleSpendProofAsync(
         string transactionHash,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version145, ElectrumXJsonMethodNames.Blockchain.Transaction.DsProof.Subscribe);
-        return CallAsync<ElectrumXDoubleSpendProof, ElectrumXSubscribeToDoubleSpendProofQuery>(
+        return CallAsync<ElectrumXSubscribedDoubleSpendProof, ElectrumXSubscribeToDoubleSpendProofQuery>(
             new JsonRpcRequest<ElectrumXSubscribeToDoubleSpendProofQuery>(
                 ElectrumXJsonMethodNames.Blockchain.Transaction.DsProof.Subscribe,
                 new ElectrumXSubscribeToDoubleSpendProofQuery(transactionHash)),
@@ -766,11 +773,11 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public Task<ElectrumXHeaderInfo> GetHeaderTipAsync(CancellationToken cancellationToken = default)
+    public Task<ElectrumXHeaderTip> GetHeaderTipAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version150, ElectrumXJsonMethodNames.Blockchain.Headers.GetTip);
-        return CallOrThrowAsync<ElectrumXHeaderInfo, ElectrumXGetHeaderTipQuery>(
+        return CallOrThrowAsync<ElectrumXHeaderTip, ElectrumXGetHeaderTipQuery>(
             new JsonRpcRequest<ElectrumXGetHeaderTipQuery>(
                 ElectrumXJsonMethodNames.Blockchain.Headers.GetTip,
                 new ElectrumXGetHeaderTipQuery()),
@@ -802,11 +809,11 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public Task<ElectrumXFirstUse?> GetScriptHashFirstUseAsync(string scriptHash, CancellationToken cancellationToken = default)
+    public Task<ElectrumXScriptHashFirstUse?> GetScriptHashFirstUseAsync(string scriptHash, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version152, ElectrumXJsonMethodNames.Blockchain.ScriptHash.GetFirstUse);
-        return CallAsync<ElectrumXFirstUse, ElectrumXScriptHashFirstUseQuery>(
+        return CallAsync<ElectrumXScriptHashFirstUse, ElectrumXScriptHashFirstUseQuery>(
             new JsonRpcRequest<ElectrumXScriptHashFirstUseQuery>(
                 ElectrumXJsonMethodNames.Blockchain.ScriptHash.GetFirstUse,
                 new ElectrumXScriptHashFirstUseQuery(scriptHash)),
@@ -814,7 +821,7 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public Task<ElectrumXHistoryList> GetRpaHistoryAsync(
+    public Task<ElectrumXRpaHistory> GetRpaHistoryAsync(
         string rpaPrefix,
         long fromHeight,
         long toHeight = ElectrumXJsonMethodArgumentDefaultValues.ElectrumXRpaHistoryQuery.ToHeight,
@@ -822,7 +829,7 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     {
         ThrowIfDisposed();
         EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version153, ElectrumXJsonMethodNames.Blockchain.Rpa.GetHistory);
-        return CallOrThrowAsync<ElectrumXHistoryList, ElectrumXRpaHistoryQuery>(
+        return CallOrThrowAsync<ElectrumXRpaHistory, ElectrumXRpaHistoryQuery>(
             new JsonRpcRequest<ElectrumXRpaHistoryQuery>(
                 ElectrumXJsonMethodNames.Blockchain.Rpa.GetHistory,
                 new ElectrumXRpaHistoryQuery(rpaPrefix, fromHeight, toHeight)),
@@ -830,12 +837,12 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public Task<ElectrumXMempoolEntryList> GetRpaMempoolAsync(string rpaPrefix,
+    public Task<ElectrumXRpaMempool> GetRpaMempoolAsync(string rpaPrefix,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version153, ElectrumXJsonMethodNames.Blockchain.Rpa.GetMempool);
-        return CallOrThrowAsync<ElectrumXMempoolEntryList, ElectrumXRpaMempoolQuery>(
+        return CallOrThrowAsync<ElectrumXRpaMempool, ElectrumXRpaMempoolQuery>(
             new JsonRpcRequest<ElectrumXRpaMempoolQuery>(
                 ElectrumXJsonMethodNames.Blockchain.Rpa.GetMempool,
                 new ElectrumXRpaMempoolQuery(rpaPrefix)),
@@ -843,7 +850,7 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public Task<ElectrumXHistoryList> GetReusableHistoryAsync(
+    public Task<ElectrumXReusableHistory> GetReusableHistoryAsync(
         long fromHeight,
         int count,
         string rpaPrefix,
@@ -851,7 +858,7 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     {
         ThrowIfDisposed();
         EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version153, ElectrumXJsonMethodNames.Blockchain.Reusable.GetHistory);
-        return CallOrThrowAsync<ElectrumXHistoryList, ElectrumXReusableHistoryQuery>(
+        return CallOrThrowAsync<ElectrumXReusableHistory, ElectrumXReusableHistoryQuery>(
             new JsonRpcRequest<ElectrumXReusableHistoryQuery>(
                 ElectrumXJsonMethodNames.Blockchain.Reusable.GetHistory,
                 new ElectrumXReusableHistoryQuery(fromHeight, count, rpaPrefix)),
@@ -859,13 +866,13 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
     }
 
     /// <inheritdoc />
-    public Task<ElectrumXMempoolEntryList> GetReusableMempoolAsync(
+    public Task<ElectrumXReusableMempool> GetReusableMempoolAsync(
         string rpaPrefix,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version153, ElectrumXJsonMethodNames.Blockchain.Reusable.GetMempool);
-        return CallOrThrowAsync<ElectrumXMempoolEntryList, ElectrumXReusableMempoolQuery>(
+        return CallOrThrowAsync<ElectrumXReusableMempool, ElectrumXReusableMempoolQuery>(
             new JsonRpcRequest<ElectrumXReusableMempoolQuery>(
                 ElectrumXJsonMethodNames.Blockchain.Reusable.GetMempool,
                 new ElectrumXReusableMempoolQuery(rpaPrefix)),
@@ -874,6 +881,22 @@ public sealed class ElectrumXBlockchainClient : ElectrumXClientBase, IElectrumXB
 
     /// <inheritdoc />
     public override ElectrumXServerVersion ServerVersion => RpcClient.ServerVersion;
+
+    private async Task<TResult> BroadcastTransactionPackageCoreAsync<TResult>(
+        IReadOnlyList<string> rawTransactions,
+        bool verbose,
+        CancellationToken cancellationToken)
+        where TResult : ElectrumXResult
+    {
+        ThrowIfDisposed();
+        EnsureProtocolMinimumVersion(ElectrumXProtocolVersions.Version160, ElectrumXJsonMethodNames.Blockchain.Transaction.BroadcastPackage);
+
+        return await CallOrThrowAsync<TResult, ElectrumXBroadcastPackageQuery>(
+            new JsonRpcRequest<ElectrumXBroadcastPackageQuery>(
+                ElectrumXJsonMethodNames.Blockchain.Transaction.BroadcastPackage,
+                new ElectrumXBroadcastPackageQuery(rawTransactions, verbose)),
+            cancellationToken).ConfigureAwait(false);
+    }
 
     private void EnsureAddressCompatibilityMethod(string methodName)
     {

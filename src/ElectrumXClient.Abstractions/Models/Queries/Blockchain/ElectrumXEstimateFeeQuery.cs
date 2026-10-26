@@ -12,7 +12,9 @@ public sealed class ElectrumXEstimateFeeQuery : ElectrumXQuery
         Mode = mode;
     }
 
+    /// <summary>Gets the target number of blocks for transaction confirmation.</summary>
     public int NumberOfBlocks { get; }
 
+    /// <summary>Gets the optional fee-estimation mode supported by the server.</summary>
     public string? Mode { get; }
 }

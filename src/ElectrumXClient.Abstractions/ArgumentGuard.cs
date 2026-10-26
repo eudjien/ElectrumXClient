@@ -1,3 +1,4 @@
+using NorthGomel.ElectrumXClient.Abstractions.Models.Queries.Blockchain;
 using System;
 using System.Diagnostics.CodeAnalysis;
 
@@ -24,6 +25,28 @@ internal static class ArgumentGuard
         {
             throw new ArgumentException("Value cannot be null or whitespace.", parameterName);
         }
+    }
+
+    internal static string ValidateAddress(string? address, string parameterName)
+    {
+        ThrowIfNullOrWhiteSpace(address, parameterName);
+
+        return address;
+    }
+
+    internal static ElectrumXTokenFilter? ValidateTokenFilter(
+        ElectrumXTokenFilter? tokenFilter,
+        string parameterName)
+    {
+        if (tokenFilter is not null &&
+            tokenFilter.Value is not (ElectrumXTokenFilter.IncludeTokens or
+                ElectrumXTokenFilter.ExcludeTokens or
+                ElectrumXTokenFilter.TokensOnly))
+        {
+            throw new ArgumentOutOfRangeException(parameterName, tokenFilter, "The token filter value is not supported.");
+        }
+
+        return tokenFilter;
     }
 
     internal static void ThrowIfNegative(int argument, string parameterName)
@@ -72,5 +95,25 @@ internal static class ArgumentGuard
         }
 
         return normalizedArgument;
+    }
+
+    internal static string ValidateAndNormalizeRpaPrefix(string? argument, string parameterName)
+    {
+        ThrowIfNullOrWhiteSpace(argument, parameterName);
+
+        if (argument.Length is < 1 or > 4)
+        {
+            throw new ArgumentException("An RPA prefix must contain between 1 and 4 hexadecimal characters.", parameterName);
+        }
+
+        foreach (char character in argument)
+        {
+            if (!Uri.IsHexDigit(character))
+            {
+                throw new ArgumentException("An RPA prefix must contain only hexadecimal characters.", parameterName);
+            }
+        }
+
+        return argument.ToLowerInvariant();
     }
 }

@@ -14,6 +14,9 @@ public sealed class ElectrumXMempool : ElectrumXResult
     /// <summary>Mempool entries in server-defined arbitrary order.</summary>
     public IReadOnlyList<ElectrumXMempoolEntry> Value { get; }
 
+    /// <summary>Converts the response to its mempool entries.</summary>
+    /// <param name="response">The mempool response.</param>
+    /// <returns>The contained mempool entries.</returns>
     public static implicit operator ElectrumXMempoolEntry[](ElectrumXMempool response)
     {
         return [.. response.Value];

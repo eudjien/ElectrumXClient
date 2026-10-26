@@ -21,7 +21,7 @@ public sealed class ElectrumXUnspentOutput : ElectrumXResult
     /// <summary>Confirmation height, or <c>0</c> for an unconfirmed transaction.</summary>
     public long Height { get; }
 
-    /// <summary>Zero-based transaction position in the block when provided by the server.</summary>
+    /// <summary>Zero-based output index within the transaction (<c>tx_pos</c>).</summary>
     public int TransactionPosition { get; }
 
     /// <summary>32-byte transaction hash containing this output, encoded as 64 hexadecimal characters.</summary>

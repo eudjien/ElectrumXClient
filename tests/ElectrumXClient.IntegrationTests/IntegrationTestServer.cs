@@ -16,7 +16,7 @@ internal sealed record IntegrationTestServer(
         50001,
         (host, port) => new ElectrumXTcpRpcClient(new ElectrumXRpcClientOptions
         {
-            Host = host, Port = port
+            Host = host, Port = port, RequestTimeout = TimeSpan.FromMinutes(5)
         }));
 
     internal static readonly IntegrationTestServer Ssl = Create(
@@ -25,7 +25,7 @@ internal sealed record IntegrationTestServer(
         (host, port) => new ElectrumXTlsTcpRpcClient(new ElectrumXRpcClientOptions
         {
 
-            Host = host, Port = port
+            Host = host, Port = port, RequestTimeout = TimeSpan.FromMinutes(5)
         }));
 
     internal static readonly IntegrationTestServer WebSocket = Create(
@@ -33,7 +33,7 @@ internal sealed record IntegrationTestServer(
         50003,
         (host, port) => new ElectrumXWebSocketRpcClient(new ElectrumXRpcClientOptions
         {
-            Host = host, Port = port
+            Host = host, Port = port, RequestTimeout = TimeSpan.FromMinutes(5)
         }));
 
     internal static readonly IntegrationTestServer SslWebSocket = Create(
@@ -41,7 +41,7 @@ internal sealed record IntegrationTestServer(
         50004,
         (host, port) => new ElectrumXTlsWebSocketRpcClient(new ElectrumXRpcClientOptions
         {
-            Host = host, Port = port
+            Host = host, Port = port, RequestTimeout = TimeSpan.FromMinutes(5)
         }));
 
     private static IntegrationTestServer Create(

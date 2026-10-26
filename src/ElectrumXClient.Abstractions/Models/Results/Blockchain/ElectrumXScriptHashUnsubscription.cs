@@ -12,6 +12,9 @@ public sealed class ElectrumXScriptHashUnsubscription : ElectrumXResult
     /// <summary><see langword="true" /> if the subscription was removed; otherwise, <see langword="false" />.</summary>
     public bool Value { get; }
 
+    /// <summary>Converts the response to the server's unsubscription result.</summary>
+    /// <param name="response">The unsubscription response.</param>
+    /// <returns><see langword="true" /> if the subscription was removed.</returns>
     public static implicit operator bool(ElectrumXScriptHashUnsubscription response)
     {
         return response.Value;

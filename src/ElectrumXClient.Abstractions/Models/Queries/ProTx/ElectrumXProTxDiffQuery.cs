@@ -5,6 +5,9 @@ namespace NorthGomel.ElectrumXClient.Abstractions.Models.Queries.ProTx;
 /// <summary>Query parameters for protx.diff.</summary>
 public sealed class ElectrumXProTxDiffQuery : ElectrumXQuery
 {
+    /// <summary>Creates a query for the ProTx state changes between two block heights.</summary>
+    /// <param name="baseHeight">Starting height of the diff; must be at least one.</param>
+    /// <param name="height">Ending height, which must not precede <paramref name="baseHeight" />.</param>
     public ElectrumXProTxDiffQuery(long baseHeight, long height)
     {
         ArgumentGuard.ThrowIfNegative(baseHeight, nameof(baseHeight));
@@ -24,7 +27,9 @@ public sealed class ElectrumXProTxDiffQuery : ElectrumXQuery
         Height = height;
     }
 
+    /// <summary>Gets the starting height of the diff.</summary>
     public long BaseHeight { get; }
 
+    /// <summary>Gets the ending height of the diff.</summary>
     public long Height { get; }
 }

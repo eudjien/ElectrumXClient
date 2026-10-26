@@ -14,6 +14,9 @@ public sealed class ElectrumXHistory : ElectrumXResult
     /// <summary>History entries in blockchain order, followed by the server's mempool entries.</summary>
     public IReadOnlyList<ElectrumXHistoryEntry> Value { get; }
 
+    /// <summary>Converts the response to its history entries.</summary>
+    /// <param name="response">The script-hash history response.</param>
+    /// <returns>The contained history entries.</returns>
     public static implicit operator ElectrumXHistoryEntry[](ElectrumXHistory response)
     {
         return [.. response.Value];

@@ -1,20 +1,27 @@
 # ElectrumXClient
 
-A .NET client for servers that implement the Electrum Cash Protocol, including compatible ElectrumX servers. It exposes typed blockchain, server, and mempool APIs over TCP, TLS, WebSocket, and TLS-over-WebSocket, with additional Dash masternode and ProTx APIs.
+A .NET client for servers that implement the Electrum Cash Protocol, including compatible ElectrumX servers. It exposes
+typed blockchain, server, and mempool APIs over TCP, TLS, WebSocket, and TLS-over-WebSocket, with additional Dash
+masternode and ProTx APIs.
 
-The library targets .NET Standard 2.1, which is supported by .NET Core 3.0 and later and .NET 5 and later (but not .NET Framework).
+The library targets .NET Standard 2.1, which is supported by .NET Core 3.0 and later and .NET 5 and later (but not .NET
+Framework).
 
 ## What it can do
 
-Use `ElectrumXClient` to access all API groups through one connection, or choose the dedicated clients for only the groups you need:
+Use `ElectrumXClient` to access all API groups through one connection, or choose the dedicated clients for only the
+groups you need:
 
 - `ElectrumXBlockchainClient` — headers, script-hash queries, utxos, transactions, and fees
 - `ElectrumXMempoolClient` — mempool queries
 - `ElectrumXServerClient` — server metadata and server-level RPC calls
-- `ElectrumXMasterNodeClient` — masternode announcements, lists, subscriptions, and status notifications on compatible Dash-derived servers
+- `ElectrumXMasterNodeClient` — masternode announcements, lists, subscriptions, and status notifications on compatible
+  Dash-derived servers
 - `ElectrumXProTxClient` — Dash ProTx diff and info queries on compatible servers
 
-This library targets Bitcoin Cash and the Electrum Cash Protocol. Server-specific methods and Dash extensions are only available when supported by the connected server. It is designed for protocol-level integration, not for a higher-level app-specific wallet or business layer.
+This library targets Bitcoin Cash and the Electrum Cash Protocol. Server-specific methods and Dash extensions are only
+available when supported by the connected server. It is designed for protocol-level integration, not for a higher-level
+app-specific wallet or business layer.
 
 ## Supported protocols
 
@@ -25,7 +32,8 @@ This library targets Bitcoin Cash and the Electrum Cash Protocol. Server-specifi
 
 ## Connecting clients
 
-Each API client can connect directly over plain TCP with host and port. The examples use the conventional Electrum Cash Protocol ports; server configurations may differ:
+Each API client can connect directly over plain TCP with host and port. The examples use the conventional Electrum Cash
+Protocol ports; server configurations may differ:
 
 ```csharp
 using NorthGomel.ElectrumXClient.Clients;
@@ -44,7 +52,8 @@ For TLS and WebSocket, construct the corresponding RPC transport directly and pa
 
 ## Quick start
 
-Use a dedicated API client for the group you need, or pass an already-created RPC transport directly into a client constructor.
+Use a dedicated API client for the group you need, or pass an already-created RPC transport directly into a client
+constructor.
 
 ### TCP connection
 
@@ -93,7 +102,8 @@ await using var client = await ElectrumXBlockchainClient.ConnectAsync(rpcClient)
 
 ### TLS certificate validation
 
-TLS transports let you configure certificate validation. The following .NET 5+ example trusts a private CA certificate in addition to checking that the server certificate is valid for the requested host:
+TLS transports let you configure certificate validation. The following .NET 5+ example trusts a private CA certificate
+in addition to checking that the server certificate is valid for the requested host:
 
 ```csharp
 using System.Net.Security;
@@ -154,7 +164,8 @@ var rpcClient = new ElectrumXTlsWebSocketRpcClient(
     });
 ```
 
-If the certificate chains to a CA already trusted by the operating system, validate it against the system trust store instead. For TLS over TCP:
+If the certificate chains to a CA already trusted by the operating system, validate it against the system trust store
+instead. For TLS over TCP:
 
 ```csharp
 var rpcClient = new ElectrumXTlsTcpRpcClient(
@@ -186,7 +197,9 @@ var rpcClient = new ElectrumXTlsWebSocketRpcClient(
     });
 ```
 
-The TLS transports currently accept all certificates unless you configure a validation callback. Do not accept every certificate: that disables server authentication and makes the connection vulnerable to interception. Keep a custom CA certificate file protected and load it from a trusted location.
+The TLS transports currently accept all certificates unless you configure a validation callback. Do not accept every
+certificate: that disables server authentication and makes the connection vulnerable to interception. Keep a custom CA
+certificate file protected and load it from a trusted location.
 
 ### WebSocket
 
@@ -271,10 +284,14 @@ Console.WriteLine($"Fee histogram entries: {info.FeeHistogram.Count}");
 - The client is asynchronous and should be disposed with `await using`.
 - The library is protocol-aware; you still need to understand ElectrumX server capabilities.
 
-See [protocol method versions](docs/protocol-method-versions.md) for method availability, deprecation, and removal history.
+See [protocol method versions](docs/protocol-method-versions.md) for method availability, deprecation, and removal
+history.
 
 ## Summary
 
-ElectrumXClient is a .NET library for connecting to Electrum Cash Protocol servers, issuing typed RPC calls, and receiving server notifications. It is best used when you want a low-level client and are comfortable working with the protocol directly.
+ElectrumXClient is a .NET library for connecting to Electrum Cash Protocol servers, issuing typed RPC calls, and
+receiving server notifications. It is best used when you want a low-level client and are comfortable working with the
+protocol directly.
 
-> This library has not been thoroughly tested. Carefully validate it in your own environment before relying on it in production.
+> This library has not been thoroughly tested. Carefully validate it in your own environment before relying on it in
+> production.

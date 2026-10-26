@@ -38,15 +38,23 @@ public sealed class ConfirmedTransactionBlockHashResultJsonConverter : JsonConve
             switch (propertyName)
             {
                 case ElectrumXJsonPropertyNames.ConfirmedTransactionBlockHashResult.BlockHash:
-                    blockHash = FirstUseResultJsonConverter.ReadString(ref reader, "The block hash must be a string.");
+                    blockHash = reader.TokenType == JsonTokenType.String
+                        ? reader.GetString() ?? throw new JsonException("The block hash must be a string.")
+                        : throw new JsonException("The block hash must be a string.");
                     break;
                 case ElectrumXJsonPropertyNames.ConfirmedTransactionBlockHashResult.BlockHeight:
-                    blockHeight = FirstUseResultJsonConverter.ReadInt64(ref reader, "The block height must be an integer.");
+                    blockHeight = reader.TokenType == JsonTokenType.Number && reader.TryGetInt64(out long parsedHeight)
+                        ? parsedHeight
+                        : throw new JsonException("The block height must be an integer.");
                     break;
                 case ElectrumXJsonPropertyNames.ConfirmedTransactionBlockHashResult.BlockHeader:
-                    blockHeader = reader.TokenType == JsonTokenType.Null
-                        ? null
-                        : FirstUseResultJsonConverter.ReadString(ref reader, "The block header must be a string.");
+                    blockHeader = reader.TokenType switch
+                    {
+                        JsonTokenType.Null => null,
+                        JsonTokenType.String => reader.GetString()
+                                                ?? throw new JsonException("The block header must be a string."),
+                        _ => throw new JsonException("The block header must be a string.")
+                    };
                     break;
                 default:
                     reader.Skip();

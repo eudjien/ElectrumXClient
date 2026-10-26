@@ -14,6 +14,9 @@ public sealed class ElectrumXUnspentOutputs : ElectrumXResult
     /// <summary>Unspent outputs associated with the requested script hash.</summary>
     public IReadOnlyList<ElectrumXUnspentOutput> Value { get; }
 
+    /// <summary>Converts the response to its unspent outputs.</summary>
+    /// <param name="response">The unspent-output response.</param>
+    /// <returns>The contained unspent outputs.</returns>
     public static implicit operator ElectrumXUnspentOutput[](ElectrumXUnspentOutputs response)
     {
         return [.. response.Value];

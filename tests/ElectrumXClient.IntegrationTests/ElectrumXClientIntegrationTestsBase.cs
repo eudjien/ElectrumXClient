@@ -49,7 +49,7 @@ public abstract class ElectrumXClientIntegrationTestsBase(
     {
         return RunOnSingleClientAsync(async client =>
         {
-            var header = await CallAsync(client.Blockchain.GetBlockHeaderAsync(0));
+            var header = await client.Blockchain.GetBlockHeaderAsync(0);
             var proof = await CallAsync(
                 client.Blockchain.GetBlockHeaderWithProofAsync(0, 1));
 
@@ -328,7 +328,7 @@ public abstract class ElectrumXClientIntegrationTestsBase(
 
     private async Task<ElectrumXHistoryEntry> GetConfirmedTransactionAsync(Client client)
     {
-        var history = (await CallAsync(client.Blockchain.GetHistoryAsync(SmallHistoryScriptHash))).Value;
+        var history = (await client.Blockchain.GetHistoryAsync(ScriptHash)).Value;
         foreach (var entry in history)
         {
             if (entry.Height > 0)

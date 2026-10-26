@@ -22,7 +22,7 @@ public sealed class JsonRpcErrorJsonConverter : JsonConverter<JsonRpcError>
         int? code = null;
         string? message = null;
         object? data = null;
-        var dataConverter = new ElectrumXJsonValueResultJsonConverter();
+        var dataConverter = new ElectrumXJsonValueJsonConverter();
 
         while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
         {
@@ -87,7 +87,7 @@ public sealed class JsonRpcErrorJsonConverter : JsonConverter<JsonRpcError>
         {
             case ElectrumXJsonValue jsonData:
                 {
-                    var dataConverter = new ElectrumXJsonValueResultJsonConverter();
+                    var dataConverter = new ElectrumXJsonValueJsonConverter();
                     dataConverter.Write(writer, jsonData, options);
                     break;
                 }

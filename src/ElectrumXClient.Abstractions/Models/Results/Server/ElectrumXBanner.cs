@@ -12,6 +12,9 @@ public sealed class ElectrumXBanner : ElectrumXResult
     /// <summary>Free-form server banner text returned by <c>server.banner</c>.</summary>
     public string Value { get; }
 
+    /// <summary>Converts the response to the server banner.</summary>
+    /// <param name="response">The banner response.</param>
+    /// <returns>The banner text.</returns>
     public static implicit operator string(ElectrumXBanner response)
     {
         return response.Value;

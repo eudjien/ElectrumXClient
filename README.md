@@ -91,6 +91,103 @@ var rpcClient = new ElectrumXTlsWebSocketRpcClient(new ElectrumXRpcClientOptions
 await using var client = await ElectrumXBlockchainClient.ConnectAsync(rpcClient);
 ```
 
+### TLS certificate validation
+
+TLS transports let you configure certificate validation. The following .NET 5+ example trusts a private CA certificate in addition to checking that the server certificate is valid for the requested host:
+
+```csharp
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
+using NorthGomel.ElectrumXClient.Clients;
+using NorthGomel.ElectrumXClient.JsonRpc;
+using NorthGomel.ElectrumXClient.JsonRpc.Clients;
+
+using var trustedRoot = X509Certificate2.CreateFromPemFile("certs/electrum-root-ca.pem");
+
+bool ValidateServerCertificate(
+    X509Certificate? certificate,
+    X509Chain? chain,
+    SslPolicyErrors errors)
+{
+    if (certificate is not X509Certificate2 serverCertificate ||
+        (errors & (SslPolicyErrors.RemoteCertificateNameMismatch |
+                   SslPolicyErrors.RemoteCertificateNotAvailable)) != SslPolicyErrors.None)
+    {
+        return false;
+    }
+
+    using var customChain = new X509Chain();
+    customChain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+    customChain.ChainPolicy.CustomTrustStore.Add(trustedRoot);
+
+    return customChain.Build(serverCertificate);
+}
+
+var rpcClient = new ElectrumXTlsTcpRpcClient(
+    new ElectrumXRpcClientOptions
+    {
+        Host = "electrum.example.com",
+        Port = 50002
+    },
+    (authenticationOptions, _) =>
+    {
+        authenticationOptions.RemoteCertificateValidationCallback =
+            (_, certificate, chain, errors) => ValidateServerCertificate(certificate, chain, errors);
+    });
+
+await using var client = await ElectrumXBlockchainClient.ConnectAsync(rpcClient);
+```
+
+For TLS over WebSocket, configure the equivalent callback on `ClientWebSocketOptions`:
+
+```csharp
+var rpcClient = new ElectrumXTlsWebSocketRpcClient(
+    new ElectrumXRpcClientOptions
+    {
+        Host = "electrum.example.com",
+        Port = 50004
+    },
+    options =>
+    {
+        options.RemoteCertificateValidationCallback =
+            (_, certificate, chain, errors) => ValidateServerCertificate(certificate, chain, errors);
+    });
+```
+
+If the certificate chains to a CA already trusted by the operating system, validate it against the system trust store instead. For TLS over TCP:
+
+```csharp
+var rpcClient = new ElectrumXTlsTcpRpcClient(
+    new ElectrumXRpcClientOptions
+    {
+        Host = "electrum.example.com",
+        Port = 50002
+    },
+    (authenticationOptions, _) =>
+    {
+        authenticationOptions.RemoteCertificateValidationCallback =
+            (_, _, _, errors) => errors == SslPolicyErrors.None;
+    });
+```
+
+For TLS over WebSocket:
+
+```csharp
+var rpcClient = new ElectrumXTlsWebSocketRpcClient(
+    new ElectrumXRpcClientOptions
+    {
+        Host = "electrum.example.com",
+        Port = 50004
+    },
+    options =>
+    {
+        options.RemoteCertificateValidationCallback =
+            (_, _, _, errors) => errors == SslPolicyErrors.None;
+    });
+```
+
+The TLS transports currently accept all certificates unless you configure a validation callback. Do not accept every certificate: that disables server authentication and makes the connection vulnerable to interception. Keep a custom CA certificate file protected and load it from a trusted location.
+
 ### WebSocket
 
 ```csharp
